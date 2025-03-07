@@ -1,45 +1,68 @@
 import React from 'react';
-import { StyleSheet, Text, View, Dimensions, TouchableOpacity, ScrollView, Image, } from 'react-native';
+import { StyleSheet, Text, View, Dimensions, TouchableOpacity, ScrollView, Image, FlatList } from 'react-native';
 import { VictoryPie } from "victory";
 import { Card } from "react-native-paper";
+import { Ionicons } from '@expo/vector-icons';
 
 const screenWidth = Dimensions.get("window").width;
 
 const Home = () => {
     const data = [
-        { label: "Home", value: 40, color: "#FF5733", euro: "250.00" },
-        { label: "Food", value: 30, color: "#33FF57", euro: "339.70" },
-        { label: "Transporte", value: 20, color: "#3357FF", euro: "21.99" },
-        { label: "Personal", value: 10, color: "#FF33A1", euro: "110.00" },
+        { label: "Home", value: 30, color: "#FF5733", euro: "250.00" },
+        { label: "Food", value: 40, color: "#33FF57", euro: "339.70" },
+        { label: "Transporte", value: 10, color: "#3357FF", euro: "21.99" },
+        { label: "Personal", value: 20, color: "#FF33A1", euro: "110.00" },
     ];
 
     return (
         <View style={styles.screen}>
             <ScrollView contentContainerStyle={styles.scrollContainer}>
+                <Text style = {{ fontSize: 26, marginLeft: 20, marginTop: 20, }}>6.158.37€</Text>
+                <Text style = {{ fontSize: 18, marginLeft: 20, marginBottom: 15, color: '#333' }}>Earnings</Text>
+                <TouchableOpacity style={styles.profileIconContainer}>
+                    <Image 
+                    source={require('@/assets/images/logo.png')} 
+                    style={styles.profileIcon} 
+                    />
+                </TouchableOpacity>
                 <Card style={styles.card}>
                     <Card.Content>
-                        {/* Container da imagem de perfil */}
-                        <View style={styles.profileContainer}>
-                            <Image 
-                                source={require('@/assets/images/react-logo.png')} 
-                                style={styles.profileImage} 
-                            />
-                        </View>
-                        
                         {/* Container dos textos "Receitas" e "Despesas" */}
-                        <View style={styles.infoContainer}>
-                        {/* Coluna Receitas */}
-                        <View style={styles.infoColumn}>
-                            <Text style={styles.infoText}>Receitas</Text>
-                            <Text style={styles.infoValue}>4000.00€</Text>
-                        </View>
+                        <View style={styles.contentContainer}>
+                            {/* Container Esquerdo (Receitas) */}
+                            <View style={styles.leftContainer}>
+                                <View style={styles.infoLabelRow}>
+                                <View style={[styles.iconContainer, { backgroundColor: '#4CAF50' }]}>
+                                    <Ionicons 
+                                    name="arrow-up-outline" 
+                                    size={18} 
+                                    color="white" 
+                                    />
+                                </View>
+                                <View style={styles.infoTextColumn}>
+                                    <Text style={styles.infoText}>Recepies</Text>
+                                    <Text style={[ styles.infoValue, styles.positive ]}>4.000.00€</Text>
+                                </View>
+                                </View>
+                            </View>
 
-                        {/* Coluna Despesas */}
-                        <View style={styles.infoColumn}>
-                            <Text style={styles.infoText}>Despesas</Text>
-                            <Text style={styles.infoValue}>7.569.45€</Text>
-                        </View>
-                        </View>
+                            {/* Container Direito (Despesas) */}
+                            <View style={styles.rightContainer}>
+                                <View style={styles.infoLabelRow}>
+                                <View style={[styles.iconContainer, { backgroundColor: '#F44336' }]}>
+                                    <Ionicons 
+                                    name="arrow-down-outline" 
+                                    size={18} 
+                                    color="white" 
+                                    />
+                                </View>
+                                <View style={styles.infoTextColumn}>
+                                    <Text style={styles.infoText}>Expenses</Text>
+                                    <Text style={[ styles.infoValue, styles.negative ]}>7.569.45€</Text>
+                                </View>
+                                </View>
+                            </View>
+                            </View>
                     </Card.Content>
                 </Card>
                 <Text style={styles.title}>Expenses by category</Text>
@@ -72,12 +95,88 @@ const Home = () => {
                         </View>
                     </Card.Content>
                 </Card>
+                <Text style={styles.title}>Upcoming Bills</Text>
+                <FlatList
+                    data={[
+                        { id: '1', date: '22 JUNE 2025', title: 'Crunchyroll', price: '9.50' },
+                        { id: '2', date: '15 MAY 2025', title: 'Spotify', price: '5.99' },
+                        { id: '3', date: '1 DECEMBER 2026', title: 'Amazon', price: '7.99' },
+                    ]}
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    keyExtractor={(item) => item.id}
+                    renderItem={({ item }) => (
+                        <View style={styles.cardContainerSlider}>
+                            <Text style={styles.dateTextSlider}>{item.date}</Text>
+                            <View style={styles.bottomSectionSlider}>
+                                <View>
+                                    <Text style={styles.titleSlider}>{item.title}</Text>
+                                    <Text style={styles.priceSlider}>{item.price}€</Text>
+                                </View>
+                                <TouchableOpacity style={styles.buttonSlider}>
+                                    <Ionicons name="arrow-forward-outline" size={18} color="white" />
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    )}
+                />
+                <Text style={styles.title}>Weak Transactions</Text>
+                {/* Transação 1 */}
+                <View style={styles.transactionRow}>
+                    <View style={styles.transactionInfo}>
+                        <View style={[styles.iconContainerWeak, { backgroundColor: '#4CAF50' }]}>
+                            <Ionicons name="arrow-up-outline" size={18} color="white" />
+                        </View>
+                        <View>
+                            <Text style={styles.transactionName}>App UI</Text>
+                            <Text style={styles.transactionDate}>12 Set 2025</Text>
+                        </View>
+                    </View>
+                    <Text style={[styles.transactionValue, styles.positive]}>+10.000</Text>
+                </View>
+
+                {/* Transação 2 */}
+                <View style={styles.transactionRow}>
+                    <View style={styles.transactionInfo}>
+                        <View style={[styles.iconContainerWeak, { backgroundColor: '#F44336' }]}>
+                            <Ionicons name="arrow-down-outline" size={18} color="white" />
+                        </View>
+                        <View>
+                            <Text style={styles.transactionName}>Shopping</Text>
+                            <Text style={styles.transactionDate}>10 Set 2025</Text>
+                        </View>
+                    </View>
+                    <Text style={[styles.transactionValue, styles.negative]}>-120.99</Text>
+                </View>
+
+                {/* Transação 3 */}
+                <View style={styles.transactionRow}>
+                    <View style={styles.transactionInfo}>
+                        <View style={[styles.iconContainerWeak, { backgroundColor: '#4CAF50' }]}>
+                            <Ionicons name="arrow-up-outline" size={18} color="white" />
+                        </View>
+                        <View>
+                            <Text style={styles.transactionName}>Visual Design</Text>
+                            <Text style={styles.transactionDate}>08 Set 2025</Text>
+                        </View>
+                    </View>
+                    <Text style={[styles.transactionValue, styles.positive]}>+300.00</Text>
+                </View>
+
+                <View style={styles.transactionRow}>
+                    <View style={styles.transactionInfo}>
+                        <View style={[styles.iconContainerWeak, { backgroundColor: '#F44336' }]}>
+                            <Ionicons name="arrow-down-outline" size={18} color="white" />
+                        </View>
+                        <View>
+                            <Text style={styles.transactionName}>Food Shopping</Text>
+                            <Text style={styles.transactionDate}>23 Dec 2025</Text>
+                        </View>
+                    </View>
+                    <Text style={[styles.transactionValue, styles.negative]}>-30.45</Text>
+                </View>
             </ScrollView>
 
-            {/* 🔹 Botão flutuante FIXO no fundo da tela */}
-            <TouchableOpacity style={styles.createButton}>
-                <Text style={styles.buttonText}>+</Text>
-            </TouchableOpacity>
         </View>
     );
 };
@@ -90,8 +189,10 @@ const styles = StyleSheet.create({
         paddingBottom: 80, // Garante espaço para o botão
     },
     title: {
-        fontSize: 20,
+        fontSize: 18,
         marginLeft: 15,
+        marginTop: 10,
+        color: '#666',
     },
     card: {
         margin: 10,
@@ -136,57 +237,191 @@ const styles = StyleSheet.create({
         textAlign: "right",
         minWidth: 60,
     },
-    createButton: {
-        position: 'absolute',
-        bottom: 90,
-        alignSelf: 'center', // 🔹 Ajuste para ficar acima da tabBar
-        height: 50,
-        width: 50,
-        borderRadius: 30,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: '#007bff',
-        elevation: 5, // 🔹 Sombra para destacar o botão
-    },
-    buttonText: {
-        color: '#fff',
-        fontSize: 30,
-        textAlign: 'center',
-    },
-    profileContainer: {
-        position: 'absolute',
-        top: 0, // Ajuste conforme necessário
-        left: 10,
-        zIndex: 1,
-        borderRadius: 30,
-        overflow: 'hidden',
-        borderWidth: 2,
-        borderColor: '#fff',
-    },
-    profileImage: {
-        width: 40,
-        height: 40,
-        resizeMode: 'cover',
-        borderRadius: 30,
-    },
-    infoContainer: {
+    
+    //profileContainer: {
+        //position: 'absolute',
+        //top: 5, // Ajuste conforme necessário
+        //left: 10,
+        //zIndex: 1,
+        //borderRadius: 30,
+        //overflow: 'hidden',
+        //borderWidth: 1,
+        //borderColor: '#fff',
+    //},
+    //profileImage: {
+        //width: 50,
+        //height: 50,
+        //resizeMode: 'cover',
+        //borderRadius: 30,
+    //},
+infoContainer: {
         flexDirection: 'row',
         justifyContent: 'space-around',
-        marginTop: 40,
+        //marginTop: 10,
         paddingHorizontal: 20,
       },
-      infoColumn: {
+infoColumn: {
+        alignItems: 'center',
+        maxWidth: '50%', // Limita a largura das colunas
+      },
+labelRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        width: '100%',
+      },
+textColumn: {
+        marginLeft: 10, // Espaçamento entre ícone e texto
+        alignItems: 'flex-start',
+      },
+contentContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        paddingHorizontal: 15,
+        paddingTop: 15,
+        paddingBottom: 10,
+      },
+leftContainer: {
+        flex: 1,
+        paddingRight: 15,
+        alignItems: 'flex-start',
+      },
+rightContainer: {
+        flex: 1,
+        paddingLeft: 15,
+        alignItems: 'flex-end',
+        borderLeftWidth: 1,
+        borderLeftColor: '#eee',
+      },
+iconContainer: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 15, // Espaço entre o ícone e o texto
+    },
+infoTextColumn: {
+        justifyContent: 'center',
+      },
+infoLabelRow: {
+        flexDirection: 'row',
         alignItems: 'center',
       },
-      infoText: {
+infoText: {
         fontSize: 16,
         color: '#666',
-        marginBottom: 5,
       },
-      infoValue: {
-        fontSize: 20,
+infoValue: {
+        fontSize: 17,
         color: '#333',
+        marginTop: 2,
       },
+      // Estilos para as transações
+transactionRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingVertical: 10,
+    },
+    transactionInfo: {
+        flexDirection: 'row', // Para alinhar ícone e texto lado a lado
+        alignItems: 'center', // Centraliza verticalmente
+    },
+transactionName: {
+        fontSize: 16,
+        color: '#333',
+        marginBottom: 4, // Espaçamento entre nome e data
+        marginLeft: 5,
+    },
+transactionDate: {
+        fontSize: 12,
+        color: '#666',
+        marginLeft: 5,
+    },
+transactionValue: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginRight: 15,
+    },
+positive: {
+        color: '#4CAF50',
+    },
+negative: {
+        color: '#F44336',
+    },
+profileIconContainer: {
+        position: 'absolute',
+        top: 20, // Ajuste conforme sua margem superior
+        right: 20,
+        zIndex: 10,
+      },
+profileIcon: {
+        width: 50,
+        height: 50,
+        borderRadius: 30,
+        borderWidth: 2,
+        borderColor: '#fff',
+      },
+slidingCard: {
+    width: 200,
+    marginRight: 10,
+    borderRadius: 10,
+    elevation: 4,
+    backgroundColor: 'white',
+    padding: 15,
+},
+cardContainerSlider: {
+    width: 180,
+    height: 150,
+    backgroundColor: '#fff', 
+    borderRadius: 20,
+    elevation: 4,
+    padding: 15,
+    justifyContent: 'space-between',
+    marginRight: 10,
+    marginLeft: 10,
+    marginTop: 10,
+    marginBottom: 10,
+},
+dateTextSlider: {
+    fontSize: 12,
+    color: '#333', 
+    textAlign: 'center',
+},
+bottomSectionSlider: {
+    backgroundColor: '#fff', // Roxo médio
+    borderRadius: 15,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 10,
+},
+titleSlider: {
+    fontSize: 14,
+    color: 'black',
+},
+priceSlider: {
+    fontSize: 17,
+    fontWeight: 'bold',
+    color: '#3357FF',
+},
+buttonSlider: {
+    width: 35,
+    height: 35,
+    backgroundColor: 'orange',
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+},
+iconContainerWeak: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 5,
+    marginLeft: 10, // Espaço entre o ícone e o texto
+},
 });
 
 export default Home;

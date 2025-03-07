@@ -10,7 +10,7 @@ export const icon = {
     profile: ( props: any ) => ( 
       <Feather name = 'user' size = { 24 } { ...props } /> 
     ),
-    settings: ( props: any ) => ( 
-      <Feather name = 'settings' size = { 24 } { ...props } /> 
+    finances: ( props: any ) => ( 
+      <Feather name = 'bar-chart' size = { 24 } { ...props } /> 
     ),
 }

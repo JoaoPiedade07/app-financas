@@ -3,29 +3,29 @@ import { StyleSheet, Text, View, TouchableOpacity, Image } from 'react-native';
 
 const Settings = () => {
     return (
-        <View style = {{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-            <Text>Profile Screen</Text>
+        <View>
             <TouchableOpacity style={styles.profileIconContainer}>
                 <Image 
                 source={require('@/assets/images/logo.png')} 
                 style={styles.profileIcon} 
             />
             </TouchableOpacity>
+            <Text style = {{ flex: 1, alignContent: 'center' }}>Name</Text>
         </View>
     );
 }; 
 
 const styles = StyleSheet.create ({
     profileIconContainer: {
-        position: 'absolute',
-        top: 20, // Ajuste conforme sua margem superior
-        right: 20,
-        zIndex: 10,
+        //position: 'absolute',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: 15,  
       },
     profileIcon: {
-        width: 70,
-        height: 70,
-        borderRadius: 50,
+        width: 120,
+        height: 120,
+        borderRadius: 100,
         borderWidth: 2,
         borderColor: '#fff',
       },

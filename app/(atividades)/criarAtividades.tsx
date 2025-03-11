@@ -22,6 +22,8 @@ const Finances = () => {
     const [dropdownPosition, setDropdownPosition] = useState({ x: 0, y: 0, width: 0 });
     const screenWidth = Dimensions.get('window').width;
     const screenHeight = Dimensions.get('window').height;
+    const [selectedDate, setSelectedDate] = useState<string | null>(null);
+    const [selectedType, setSelectedType] = useState("Expense");
 
     const openDropdown = () => {
         if (dropdownRef.current) {
@@ -59,10 +61,26 @@ const Finances = () => {
             <Card style = { styles.card }>
                 <Card.Content>
                     <input type="number" />
-                    <Text>€</Text>
-                    <Text style = { styles.title }>Recepies</Text>
-                    <Text style = { styles.title }>Expense</Text>
-                    <Text style = { styles.title }>Upcoming Bills</Text>
+                    <View style={styles.switcherContainer}>
+                    {["Recepies", "Expense"].map((type) => (
+                        <TouchableOpacity 
+                            key={type} 
+                            style={[
+                                styles.switcherButton, 
+                                selectedType === type && styles.switcherButtonActive
+                            ]}
+                            onPress={() => setSelectedType(type)}
+                        >
+                            <Text style={[
+                                styles.switcherText, 
+                                selectedType === type && styles.switcherTextActive
+                            ]}>
+                                {type}
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
+                </View>
+
                 </Card.Content>
             </Card>
             <Text style={styles.title}>Category</Text>
@@ -87,37 +105,36 @@ const Finances = () => {
 
             {/* Modal Dropdown */}
             <Modal
-    animationType="none"
-    transparent={true}
-    visible={modalVisible}
-    onRequestClose={() => setModalVisible(false)}
->
-    <TouchableOpacity 
-        style={styles.overlay} 
-        activeOpacity={1} 
-        onPress={() => setModalVisible(false)}
-    >
-        <View style={[styles.dropdownModal, { top: dropdownPosition.y, left: dropdownPosition.x }]}>
-            <FlatList 
-                data={categories}
-                keyExtractor={(item) => item.label}
-                contentContainerStyle={{ flexGrow: 1 }} // 🔹 Evita que a lista estique
-                renderItem={({ item }) => (
-                    <TouchableOpacity 
-                        style={styles.categoryItem} 
-                        onPress={() => {
-                            setSelectedCategory(item);
-                            setModalVisible(false);
-                        }}>
-                        <View style={[styles.colorBox, { backgroundColor: item.color }]}></View>
-                        <Text style={styles.transactionValue}>{item.label}</Text>
-                    </TouchableOpacity>
-                )}
-            />
-        </View>
-    </TouchableOpacity>
-</Modal>
-
+                animationType="none"
+                transparent={true}
+                visible={modalVisible}
+                onRequestClose={() => setModalVisible(false)}
+            >
+                <TouchableOpacity 
+                    style={styles.overlay} 
+                    activeOpacity={1} 
+                    onPress={() => setModalVisible(false)}
+                >
+                    <View style={[styles.dropdownModal, { top: dropdownPosition.y, left: dropdownPosition.x }]}>
+                        <FlatList 
+                            data={categories}
+                            keyExtractor={(item) => item.label}
+                            contentContainerStyle={{ flexGrow: 1 }} // 🔹 Evita que a lista estique
+                            renderItem={({ item }) => (
+                                <TouchableOpacity 
+                                    style={styles.categoryItem} 
+                                    onPress={() => {
+                                        setSelectedCategory(item);
+                                        setModalVisible(false);
+                                    }}>
+                                    <View style={[styles.colorBox, { backgroundColor: item.color }]}></View>
+                                    <Text style={styles.transactionValue}>{item.label}</Text>
+                                </TouchableOpacity>
+                            )}
+                        />
+                    </View>
+                </TouchableOpacity>
+            </Modal>
 
             <Text style = { styles.title }>Date</Text>
             <Card style = { styles.card }>
@@ -132,7 +149,10 @@ const Finances = () => {
                         </View>
                     </View>
                     <TouchableOpacity onPress={handleOpen}>
-                        <Text style={styles.transactionValue}>Set Date</Text>
+                        <Text style={styles.transactionValue}>
+                            {selectedDate ? selectedDate : "Set Date"}
+                        </Text>
+                    </TouchableOpacity>
 
                         <Modal
                         animationType='slide'
@@ -142,12 +162,15 @@ const Finances = () => {
                             <View style={styles.modalView}>
 
                             <ThemedView style={styles.calendarContainer}>
-                                <Calendar 
-                                onDayPress={(day: DateData) => console.log('Selected day:', day)}
-                                markedDates={{ 
-                                '25-02-2025': {selected: true, marked: true, selectedColor: 'blue'},
+                            <Calendar 
+                                onDayPress={(day: DateData) => {
+                                    setSelectedDate(day.dateString); // Atualiza a data escolhida
+                                    setOpen(false); // Fecha o modal
                                 }}
-                                />
+                                markedDates={{ 
+                                    [selectedDate || '']: { selected: true, marked: true, selectedColor: '#007bff' },
+                                }}
+                            />
                             </ThemedView>
 
                             <TouchableOpacity style={styles.button} onPress={handleOpen}>
@@ -157,7 +180,6 @@ const Finances = () => {
                             </View>
                             </View>
                         </Modal>
-                    </TouchableOpacity>
                 </View>
                 </Card.Content>
             </Card>
@@ -291,7 +313,32 @@ const styles = StyleSheet.create ({
         shadowRadius: 4,
         minWidth: 120, // 🔹 Define um tamanho mínimo
         maxWidth: 200, // 🔹 Define um tamanho máximo para não esticar demais
-    },       
+    },   
+    switcherContainer: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        backgroundColor: "#EEE",
+        borderRadius: 10,
+        marginVertical: 10,
+        padding: 5,
+    },
+    switcherButton: {
+        flex: 1,
+        paddingVertical: 10,
+        alignItems: "center",
+        borderRadius: 8,
+    },
+    switcherButtonActive: {
+        backgroundColor: "#007bff",
+    },
+    switcherText: {
+        fontSize: 16,
+        color: "#333",
+    },
+    switcherTextActive: {
+        color: "#FFF",
+        fontWeight: "bold",
+    },    
 })
 
 export default Finances;

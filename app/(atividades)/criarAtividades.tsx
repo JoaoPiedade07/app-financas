@@ -4,12 +4,11 @@ import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 
 const Finances = () => {
     return (
-        <View style = {{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-            <Text>Finances Screen</Text>
-            {/* 🔹 Botão flutuante FIXO no fundo da tela */}
-            <TouchableOpacity style={styles.createButton}>
-                <Link href={ '/(atividades)/criarAtividades' } style = { styles.buttonText }>+</Link>
-            </TouchableOpacity>
+        <View style = {{ flex: 1, alignItems: 'center' }}>
+            <Text>New Expense</Text>
+            <input type="number" />
+            <Text>Category</Text>
+            <Text>Date</Text>
         </View>
     )
 }

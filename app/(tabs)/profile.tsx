@@ -10,7 +10,7 @@ const Settings = () => {
                 style={styles.profileIcon} 
             />
             </TouchableOpacity>
-            <Text style = {{ flex: 1, alignContent: 'center' }}>Name</Text>
+            <Text>Name</Text>
         </View>
     );
 }; 

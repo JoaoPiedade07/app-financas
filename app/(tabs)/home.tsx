@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 const screenWidth = Dimensions.get("window").width;
 
 const Home = () => {
+
     const data = [
         { label: "Home", value: 30, color: "#FF5733", euro: "250.00" },
         { label: "Food", value: 40, color: "#33FF57", euro: "339.70" },
@@ -356,8 +357,8 @@ profileIconContainer: {
         zIndex: 10,
       },
 profileIcon: {
-        width: 50,
-        height: 50,
+        width: 60,
+        height: 60,
         borderRadius: 30,
         borderWidth: 2,
         borderColor: '#fff',

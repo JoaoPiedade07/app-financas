@@ -92,7 +92,7 @@ const Finances = () => {
                 <Text style={styles.title}>Upcoming Bills</Text>
                     <FlatList
                         data={[
-                            { id: '1', date: '22 JUNE 2025', title: 'Crunchyroll', price: '9.50' },
+                            { id: '1', date: '22 JUNE 2025', title: 'Crunchyroll', price: '9.55' },
                             { id: '2', date: '15 MAY 2025', title: 'Spotify', price: '5.99' },
                             { id: '3', date: '1 DECEMBER 2026', title: 'Amazon', price: '7.99' },
                         ]}

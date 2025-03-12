@@ -22,6 +22,7 @@ const Finances = () => {
     const [open, setOpen] = useState(false); 
     const [selectedCategory, setSelectedCategory] = useState(categories[0]);
     const [modalVisible, setModalVisible] = useState(false);
+    const [modalVisibleCategories, setModalVisibleCategories] = useState(false);
     const dropdownRef = useRef<View>(null); // Definir um ref corretamente tipado
     const [dropdownPosition, setDropdownPosition] = useState({ x: 0, y: 0, width: 0 });
     const screenWidth = Dimensions.get('window').width;
@@ -52,7 +53,7 @@ const Finances = () => {
                 }
     
                 setDropdownPosition({ x: newX, y: newY, width });
-                setModalVisible(true);
+                setModalVisibleCategories(true);
             });
         }
     };
@@ -69,7 +70,8 @@ const Finances = () => {
         };
 
         setTransactions([...transactions, newEntry]);
-        setNewTransaction({ name: '', date: '', value: '' });
+        setNewTransaction({ name: '', date: '', value: ''
+         });
         setModalVisible(false);
     };
 
@@ -152,7 +154,7 @@ const Finances = () => {
                                             <TouchableOpacity ref={dropdownRef} onPress={openDropdown}>
                                                 <View style={styles.transactionInfo}>
                                                     <View style={[styles.colorBox, { backgroundColor: selectedCategory.color }]}></View>
-                                                    <Text style={styles.transactionValue}>{selectedCategory.label}</Text>
+                                                    <Text style={styles.transactionText}>{selectedCategory.label}</Text>
                                                 </View>
                                             </TouchableOpacity>
                                         </View>
@@ -161,13 +163,13 @@ const Finances = () => {
                                 <Modal
                                     animationType="none"
                                     transparent={true}
-                                    visible={modalVisible}
-                                    onRequestClose={() => setModalVisible(false)}
+                                    visible={modalVisibleCategories}
+                                    onRequestClose={() => setModalVisibleCategories(false)}
                                 >
                                     <TouchableOpacity 
                                         style={styles.overlay} 
                                         activeOpacity={1} 
-                                        onPress={() => setModalVisible(false)}
+                                        onPress={() => setModalVisibleCategories(false)}
                                     >
                                         <View style={[styles.dropdownModal, { top: dropdownPosition.y, left: dropdownPosition.x }]}>
                                             <FlatList 
@@ -179,10 +181,10 @@ const Finances = () => {
                                                         style={styles.categoryItem} 
                                                         onPress={() => {
                                                             setSelectedCategory(item);
-                                                            setModalVisible(false);
+                                                            setModalVisibleCategories(false);
                                                         }}>
                                                         <View style={[styles.colorBox, { backgroundColor: item.color }]}></View>
-                                                        <Text style={styles.transactionValue}>{item.label}</Text>
+                                                        <Text style={[styles.transactionText,]}>{item.label}</Text>
                                                     </TouchableOpacity>
                                                 )}
                                             />
@@ -200,7 +202,7 @@ const Finances = () => {
                         </View>
                     </View>
                     <TouchableOpacity style={styles.dateButton} onPress={() => setCalendarVisible(!calendarVisible)}>
-                        <Text style={styles.transactionValue}>
+                        <Text style={styles.transactionText}>
                             {newTransaction.date ? newTransaction.date : "Set Date"}
                         </Text>
                     </TouchableOpacity>
@@ -222,7 +224,7 @@ const Finances = () => {
                                 </View>
 
                                 <TouchableOpacity style={styles.button} onPress={() => setCalendarVisible(false)}>
-                                    <Text style={styles.buttonText}>Fechar Calendário</Text>
+                                    <Text style={styles.dateButtonText}>Fechar Calendário</Text>
                                 </TouchableOpacity>
                             </View>
                         </View>
@@ -303,6 +305,10 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         marginRight: 15,
     },
+    transactionText: {
+        fontSize: 16,
+        marginRight: 15,
+    },
     positive: {
         color: '#4CAF50',
     },
@@ -373,6 +379,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         marginTop: 10,
+        marginBottom: 20, // Adiciona uma margem para os botões não ficarem colados ao fundo
     },
     dateButton: { 
         padding: 10,
@@ -380,6 +387,11 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
         borderRadius: 5,
         marginBottom: 10 
+    },
+    dateButtonText: {
+        color: '#fff',
+        fontSize: 18,
+        textAlign: 'center',
     },
     modalView: { 
         backgroundColor: 'white',
@@ -401,9 +413,9 @@ const styles = StyleSheet.create({
     },
     button: {
         marginTop: 10,
-        height: 50,
+        height: 40,
         borderRadius: 8,
-        paddingHorizontal: 10,
+        marginHorizontal: 40,
         backgroundColor: '#007bff',
         justifyContent: 'center',
         alignItems: 'center',

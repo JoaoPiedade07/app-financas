@@ -2,14 +2,20 @@ import React, { useState, useRef } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Modal, TextInput, Button, Dimensions, FlatList } from 'react-native';
 import { Calendar, DateData } from 'react-native-calendars';
-import { Card } from "react-native-paper";
+import { BarChart } from '@mui/x-charts/BarChart';
+
 
 const categories = [
-    { label: "Home", color: "#FF5733" },
-    { label: "Food", color: "#33FF57" },
-    { label: "Transporte", color: "#3357FF" },
-    { label: "Personal", color: "#FF33A1" },
+    { label: "Home", color: "#FF5733" }, //Color - Red
+    { label: "Food", color: "#33FF57" }, //Color - Green
+    { label: "Transporte", color: "#3357FF" }, //Color - Blue
+    { label: "Personal", color: "#FF33A1" }, //Color - Pink
 ];
+
+const data = [
+    { label: 'Recepies', value: 50 },
+    { label: 'Expenses', value: 80 },
+  ];
 
 const Finances = () => {
     const [transactions, setTransactions] = useState([
@@ -70,14 +76,44 @@ const Finances = () => {
         };
 
         setTransactions([...transactions, newEntry]);
-        setNewTransaction({ name: '', date: '', value: ''
-         });
+        setNewTransaction({ name: '', date: '', value: '' });
         setModalVisible(false);
     };
 
     return (
         <View style={styles.screen}>
             <ScrollView contentContainerStyle={styles.scrollContainer}>
+            <BarChart
+                xAxis={[{ scaleType: 'band', data: [ 'Receits', 'Expenses' ] }]}
+                series={[{ data: [1, 7] }, { data: [6, 2] }]}
+                width={400}
+                height={250}
+                />
+                <Text style={styles.title}>Upcoming Bills</Text>
+                    <FlatList
+                        data={[
+                            { id: '1', date: '22 JUNE 2025', title: 'Crunchyroll', price: '9.50' },
+                            { id: '2', date: '15 MAY 2025', title: 'Spotify', price: '5.99' },
+                            { id: '3', date: '1 DECEMBER 2026', title: 'Amazon', price: '7.99' },
+                        ]}
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        keyExtractor={(item) => item.id}
+                        renderItem={({ item }) => (
+                        <View style={styles.cardContainerSlider}>
+                            <Text style={styles.dateTextSlider}>{item.date}</Text>
+                            <View style={styles.bottomSectionSlider}>
+                                <View>
+                                    <Text style={styles.titleSlider}>{item.title}</Text>
+                                        <Text style={styles.priceSlider}>{item.price}€</Text>
+                                </View>
+                                <TouchableOpacity style={styles.buttonSlider}>
+                                    <Ionicons name="arrow-forward-outline" size={18} color="white" />
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                        )}
+                    />
                 <Text style={styles.title}>Transactions</Text>
                 {transactions.map((transaction) => (
                     <View key={transaction.id} style={styles.transactionRow}>
@@ -107,10 +143,10 @@ const Finances = () => {
             <Modal visible={modalVisible} animationType="slide" transparent={true}>
             <View style={styles.modalContainer}>
                 <View style={styles.modalContent}>
-                    <Text style={styles.modalTitle}>Nova Transação</Text>
+                    <Text style={styles.modalTitle}>New Transaction</Text>
 
                     <View style={styles.switcherContainer}>
-                        {["Recepies", "Expense"].map((type) => (
+                        {[ 'Recepie', 'Expense' ].map((type) => (
                             <TouchableOpacity 
                                 key={type} 
                                 style={[
@@ -194,7 +230,7 @@ const Finances = () => {
 
                     <View style={styles.transactionRow}>
                     <View style={styles.transactionInfo}>
-                        <View style={[styles.iconContainerWeak, { backgroundColor: '#4CAF50' }]}>
+                        <View style={[styles.iconContainerWeak, { backgroundColor: '#3357FF' }]}>
                             <Ionicons name="calendar-outline" size={18} color="white" />
                         </View>
                         <View>
@@ -230,15 +266,15 @@ const Finances = () => {
                         </View>
                     </Modal>
 
-                    <View style={styles.modalButtons}>
-                        <Button title="Adicionar" onPress={addTransaction} />
-                        <Button title="Cancelar" color="red" onPress={() => setModalVisible(false)} />
-                    </View>
+                    
+                </View>
+                <View style={styles.modalButtons}>
+                    <TouchableOpacity style = { styles.addCancelButtons } onPress={addTransaction}><Text style = { styles.addCancelButtonText }>Add</Text></TouchableOpacity>
+                    <TouchableOpacity style = { styles.addCancelButtons } onPress={() => setModalVisible(false)}><Text style = { styles.addCancelButtonText }>Cancel</Text></TouchableOpacity>
                 </View>
             </View>
             </View>
-        </Modal>
-            
+        </Modal>          
         </View>
     );
 };
@@ -248,7 +284,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     scrollContainer: {
-        paddingBottom: 80,
+        paddingBottom: 140,
     },
     title: {
         fontSize: 18,
@@ -343,6 +379,27 @@ const styles = StyleSheet.create({
         marginBottom: 10,
         textAlign: 'center',
     },
+    modalButtons: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginTop: 10,
+        borderRadius: 30,
+        marginBottom: 20, // Adiciona uma margem para os botões não ficarem colados ao fundo
+    },
+    addCancelButtons: {
+        borderRadius: 10,
+        backgroundColor: "#007bff",
+        height: 40,
+        width: 90,
+        marginHorizontal: 50,
+
+    },
+    addCancelButtonText: {
+        color: '#fff',
+        fontSize: 18,
+        textAlign: 'center',
+        alignItems: 'center',
+    },
     input: {
         borderWidth: 1,
         borderColor: '#ccc',
@@ -375,12 +432,6 @@ const styles = StyleSheet.create({
         color: "#FFF",
         fontWeight: "bold",
     }, 
-    modalButtons: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginTop: 10,
-        marginBottom: 20, // Adiciona uma margem para os botões não ficarem colados ao fundo
-    },
     dateButton: { 
         padding: 10,
         alignItems: 'center',
@@ -396,7 +447,6 @@ const styles = StyleSheet.create({
     modalView: { 
         backgroundColor: 'white',
         padding: 20,
-        borderRadius: 10,
         elevation: 5 
     },
     calendarContainer: { 
@@ -449,6 +499,57 @@ const styles = StyleSheet.create({
         minWidth: 120, // 🔹 Define um tamanho mínimo
         maxWidth: 200, // 🔹 Define um tamanho máximo para não esticar demais
     }, 
+    slidingCard: {
+        width: 200,
+        marginRight: 10,
+        borderRadius: 10,
+        elevation: 4,
+        backgroundColor: 'white',
+        padding: 15,
+    },
+    cardContainerSlider: {
+        width: 180,
+        height: 150,
+        backgroundColor: '#fff', 
+        borderRadius: 20,
+        elevation: 4,
+        padding: 15,
+        justifyContent: 'space-between',
+        marginRight: 10,
+        marginLeft: 10,
+        marginTop: 10,
+        marginBottom: 10,
+    },
+    dateTextSlider: {
+        fontSize: 12,
+        color: '#333', 
+        textAlign: 'center',
+    },
+    bottomSectionSlider: {
+        backgroundColor: '#fff', // Roxo médio
+        borderRadius: 15,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 10,
+    },
+    titleSlider: {
+        fontSize: 14,
+        color: 'black',
+    },
+    priceSlider: {
+        fontSize: 17,
+        fontWeight: 'bold',
+        color: '#3357FF',
+    },
+    buttonSlider: {
+        width: 35,
+        height: 35,
+        backgroundColor: 'orange',
+        borderRadius: 30,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
 });
 
 export default Finances;

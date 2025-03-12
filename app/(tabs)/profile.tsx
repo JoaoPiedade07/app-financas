@@ -6,7 +6,6 @@ import { Link } from 'expo-router';
  
 const Profile = () => {
 
-
     return (
         <View>
             <Link href={ '/(profile)/settings' } style={styles.settingsIcon}>

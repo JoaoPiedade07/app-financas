@@ -4,13 +4,14 @@ export const icon = {
     home: ( props: any ) => ( 
       <Feather name = 'home' size = { 24 } { ...props } /> 
     ),
-    list: ( props: any ) => ( 
+    finances: ( props: any ) => ( 
+      <Feather name = 'bar-chart' size = { 24 } { ...props } /> 
+    ),
+    budget: ( props: any ) => ( 
       <Feather name = 'list' size = { 24 } { ...props } /> 
     ),
     profile: ( props: any ) => ( 
       <Feather name = 'user' size = { 24 } { ...props } /> 
     ),
-    finances: ( props: any ) => ( 
-      <Feather name = 'bar-chart' size = { 24 } { ...props } /> 
-    ),
+    
 }

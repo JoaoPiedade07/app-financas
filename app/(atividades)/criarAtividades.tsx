@@ -1,6 +1,5 @@
 import React, { useState, useRef } from 'react';
 import { Card } from "react-native-paper";
-import { Link } from 'expo-router';
 import { StyleSheet, Text, View, TouchableOpacity, Modal, FlatList, Dimensions } from 'react-native';
 import { ThemedView } from '@/components/ThemedView';
 import { Calendar, DateData } from 'react-native-calendars';
@@ -155,7 +154,7 @@ const Finances = () => {
                     </TouchableOpacity>
 
                         <Modal
-                        animationType='slide'
+                        animationType='none'
                         transparent={true}
                         visible={open}>
                             <View style={styles.centerView}>

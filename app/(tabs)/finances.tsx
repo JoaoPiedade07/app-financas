@@ -3,6 +3,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Modal, TextInput, Button, Dimensions, FlatList } from 'react-native';
 import { Calendar, DateData } from 'react-native-calendars';
 import { BarChart } from '@mui/x-charts/BarChart';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
 
 const categories = [
@@ -37,7 +39,13 @@ const Finances = () => {
     const [selectedType, setSelectedType] = useState('Expense'); // Default como despesa
     const [newTransaction, setNewTransaction] = useState({ name: '', date: '', value: '' });
     const [calendarVisible, setCalendarVisible] = useState(false);
+    const translateY = useSharedValue(0); // Controla a posição vertical do modal
+    const isModalOpen = useSharedValue(true); // Indica se o modal está aberto
 
+    const getButtonColor = () => {
+        return selectedType === 'Recepie' ? '#4CAF50' : '#F44336'; // Verde para Recepie, Vermelho para Expense
+    };
+    
     const openDropdown = () => {
         if (dropdownRef.current) {
             dropdownRef.current.measure((fx, fy, width, height, px, py) => {
@@ -67,18 +75,45 @@ const Finances = () => {
     const addTransaction = () => {
         if (!newTransaction.name || !newTransaction.date || !newTransaction.value) return;
 
-        const newEntry = {
-            id: transactions.length + 1,
-            name: newTransaction.name,
-            date: newTransaction.date,
-            value: selectedType === 'Recepies' ? parseFloat(newTransaction.value) : -Math.abs(parseFloat(newTransaction.value)),
-            type: selectedType
-        };
+    const newEntry = {
+        id: transactions.length + 1,
+        name: newTransaction.name,
+        date: newTransaction.date,
+        value: selectedType === 'Recepies' ? parseFloat(newTransaction.value) : -Math.abs(parseFloat(newTransaction.value)),
+        type: selectedType
+    };
 
         setTransactions([...transactions, newEntry]);
         setNewTransaction({ name: '', date: '', value: '' });
         setModalVisible(false);
     };
+
+    const gesture = Gesture.Pan()
+    .onStart(() => {
+        // Quando o usuário começa a arrastar
+    })
+    .onUpdate((event) => {
+        if (event.translationY > 0) {
+            translateY.value = event.translationY; // Move o modal para baixo
+        }
+    })
+    .onEnd((event) => {
+        if (event.translationY > screenHeight * 0.3) {
+            // Fecha o modal se o usuário arrastar mais de 30% da tela
+            translateY.value = withTiming(screenHeight, { duration: 300 });
+            isModalOpen.value = false;
+            setTimeout(() => setModalVisible(false), 300); // Fecha o modal após a animação
+        } else {
+            // Volta ao topo se o usuário não arrastar o suficiente
+            translateY.value = withTiming(0, { duration: 300 });
+        }
+    });
+
+    const animatedStyle = useAnimatedStyle(() => {
+        return {
+            transform: [{ translateY: translateY.value }],
+        };
+    });
 
     return (
         <View style={styles.screen}>
@@ -134,147 +169,164 @@ const Finances = () => {
             </ScrollView>
 
             {/* Botão flutuante para adicionar nova despesa */}
-            <TouchableOpacity style={styles.createButton} onPress={() => setModalVisible(true)}>
+            <TouchableOpacity style={styles.createButton} onPress={() => {setModalVisible(true); 
+                translateY.value = withTiming(0, { duration: 300 });
+                isModalOpen.value = true;}} >
                 <Text style={styles.buttonText}>+</Text>
             </TouchableOpacity>
 
 
             {/* Modal para adicionar transação */}
-            <Modal visible={modalVisible} animationType="slide" transparent={true}>
-            <View style={styles.modalContainer}>
-                <View style={styles.modalContent}>
-                    <Text style={styles.modalTitle}>New Transaction</Text>
+            <Modal visible={modalVisible} animationType="none" transparent={true}>
+                <View style={styles.modalContainer}>
+                    <GestureDetector gesture={gesture}>
+                        <Animated.View style={[styles.modalContent, animatedStyle]}>
+                            {/* Tracinho no topo */}
+                            <View style={styles.dragIndicator} />
 
-                    <View style={styles.switcherContainer}>
-                        {[ 'Recepie', 'Expense' ].map((type) => (
-                            <TouchableOpacity 
-                                key={type} 
-                                style={[
-                                    styles.switcherButton, 
-                                    selectedType === type && styles.switcherButtonActive
-                                ]}
-                                onPress={() => setSelectedType(type)}
-                            >
-                                <Text style={[
-                                    styles.switcherText, 
-                                    selectedType === type && styles.switcherTextActive
-                                ]}>
-                                    {type}
-                                </Text>
-                            </TouchableOpacity>
-                        ))}
-                    </View>
+                            {/* Título */}
+                            <Text style={styles.modalTitle}>New Transaction</Text>
 
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Price"
-                        keyboardType="numeric"
-                        value={newTransaction.value}
-                        onChangeText={(text) => setNewTransaction({ ...newTransaction, value: text })}
-                    />
-
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Name"
-                        value={newTransaction.name}
-                        onChangeText={(text) => setNewTransaction({ ...newTransaction, name: text })}
-                    />
-
-                                        <View style={styles.transactionRow}>
-                                            <View style={styles.transactionInfo}>
-                                                <View style={[styles.iconContainerWeak, { backgroundColor: '#4CAF50' }]}>
-                                                    <Ionicons name="pricetag-outline" size={18} color="white" />
-                                                </View>
-                                                <Text style={styles.transactionName}>Category</Text>
-                                            </View>
-                                            <TouchableOpacity ref={dropdownRef} onPress={openDropdown}>
-                                                <View style={styles.transactionInfo}>
-                                                    <View style={[styles.colorBox, { backgroundColor: selectedCategory.color }]}></View>
-                                                    <Text style={styles.transactionText}>{selectedCategory.label}</Text>
-                                                </View>
-                                            </TouchableOpacity>
-                                        </View>
-
-                                {/* Modal Dropdown */}
-                                <Modal
-                                    animationType="none"
-                                    transparent={true}
-                                    visible={modalVisibleCategories}
-                                    onRequestClose={() => setModalVisibleCategories(false)}
-                                >
-                                    <TouchableOpacity 
-                                        style={styles.overlay} 
-                                        activeOpacity={1} 
-                                        onPress={() => setModalVisibleCategories(false)}
+                            {/* Switcher */}
+                            <View style={styles.switcherContainer}>
+                                {['Recepie', 'Expense'].map((type) => (
+                                    <TouchableOpacity
+                                        key={type}
+                                        style={[
+                                            styles.switcherButton,
+                                            selectedType === type && styles.switcherButtonActive
+                                        ]}
+                                        onPress={() => setSelectedType(type)}
                                     >
-                                        <View style={[styles.dropdownModal, { top: dropdownPosition.y, left: dropdownPosition.x }]}>
-                                            <FlatList 
-                                                data={categories}
-                                                keyExtractor={(item) => item.label}
-                                                contentContainerStyle={{ flexGrow: 1 }} // 🔹 Evita que a lista estique
-                                                renderItem={({ item }) => (
-                                                    <TouchableOpacity 
-                                                        style={styles.categoryItem} 
-                                                        onPress={() => {
-                                                            setSelectedCategory(item);
-                                                            setModalVisibleCategories(false);
-                                                        }}>
-                                                        <View style={[styles.colorBox, { backgroundColor: item.color }]}></View>
-                                                        <Text style={[styles.transactionText,]}>{item.label}</Text>
-                                                    </TouchableOpacity>
-                                                )}
-                                            />
-                                        </View>
+                                        <Text
+                                            style={[
+                                                styles.switcherText,
+                                                selectedType === type && styles.switcherTextActive
+                                            ]}
+                                        >
+                                            {type}
+                                        </Text>
                                     </TouchableOpacity>
-                                </Modal>
+                                ))}
+                            </View>
 
-                    <View style={styles.transactionRow}>
-                    <View style={styles.transactionInfo}>
-                        <View style={[styles.iconContainerWeak, { backgroundColor: '#3357FF' }]}>
-                            <Ionicons name="calendar-outline" size={18} color="white" />
-                        </View>
-                        <View>
-                            <Text style={ styles.transactionName }>Date</Text>
-                        </View>
-                    </View>
-                    <TouchableOpacity style={styles.dateButton} onPress={() => setCalendarVisible(!calendarVisible)}>
-                        <Text style={styles.transactionText}>
-                            {newTransaction.date ? newTransaction.date : "Set Date"}
-                        </Text>
-                    </TouchableOpacity>
+                            {/* Campos de entrada */}
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Price"
+                                keyboardType="numeric"
+                                value={newTransaction.value}
+                                onChangeText={(text) => setNewTransaction({ ...newTransaction, value: text })}
+                            />
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Name"
+                                value={newTransaction.name}
+                                onChangeText={(text) => setNewTransaction({ ...newTransaction, name: text })}
+                            />
 
-                    {/* Modal do Calendário */}
-                    <Modal animationType="none" transparent={true} visible={calendarVisible}>
-                        <View style={styles.centerView}>
-                            <View style={styles.modalView}>
-                                <View style={styles.calendarContainer}>
-                                    <Calendar
-                                        onDayPress={(day: DateData) => {
-                                            setNewTransaction({ ...newTransaction, date: day.dateString });
-                                            setCalendarVisible(false);
-                                        }}
-                                        markedDates={{
-                                            [newTransaction.date || '']: { selected: true, marked: true, selectedColor: '#007bff' },
-                                        }}
-                                    />
+                            {/* Categoria */}
+                            <View style={styles.transactionRow}>
+                                <View style={styles.transactionInfo}>
+                                    <View style={[styles.iconContainerWeak, { backgroundColor: '#4CAF50' }]}>
+                                        <Ionicons name="pricetag-outline" size={18} color="white" />
+                                    </View>
+                                    <Text style={styles.transactionName}>Category</Text>
                                 </View>
-
-                                <TouchableOpacity style={styles.button} onPress={() => setCalendarVisible(false)}>
-                                    <Text style={styles.dateButtonText}>Fechar Calendário</Text>
+                                <TouchableOpacity ref={dropdownRef} onPress={openDropdown}>
+                                    <View style={styles.transactionInfo}>
+                                        <View style={[styles.colorBox, { backgroundColor: selectedCategory.color }]}></View>
+                                        <Text style={styles.transactionText}>{selectedCategory.label}</Text>
+                                    </View>
                                 </TouchableOpacity>
                             </View>
-                        </View>
-                    </Modal>
 
-                    
+                            {/* Dropdown de categorias */}
+                            <Modal
+                                animationType="none"
+                                transparent={true}
+                                visible={modalVisibleCategories}
+                                onRequestClose={() => setModalVisibleCategories(false)}
+                            >
+                                <TouchableOpacity
+                                    style={styles.overlay}
+                                    activeOpacity={1}
+                                    onPress={() => setModalVisibleCategories(false)}
+                                >
+                                    <View style={[styles.dropdownModal, { top: dropdownPosition.y, left: dropdownPosition.x }]}>
+                                        <FlatList
+                                            data={categories}
+                                            keyExtractor={(item) => item.label}
+                                            renderItem={({ item }) => (
+                                                <TouchableOpacity
+                                                    style={styles.categoryItem}
+                                                    onPress={() => {
+                                                        setSelectedCategory(item);
+                                                        setModalVisibleCategories(false);
+                                                    }}
+                                                >
+                                                    <View style={[styles.colorBox, { backgroundColor: item.color }]}></View>
+                                                    <Text style={styles.transactionText}>{item.label}</Text>
+                                                </TouchableOpacity>
+                                            )}
+                                        />
+                                    </View>
+                                </TouchableOpacity>
+                            </Modal>
+
+                            {/* Data */}
+                            <View style={styles.transactionRow}>
+                                <View style={styles.transactionInfo}>
+                                    <View style={[styles.iconContainerWeak, { backgroundColor: '#3357FF' }]}>
+                                        <Ionicons name="calendar-outline" size={18} color="white" />
+                                    </View>
+                                    <Text style={styles.transactionName}>Date</Text>
+                                </View>
+                                <TouchableOpacity style={styles.dateButton} onPress={() => setCalendarVisible(!calendarVisible)}>
+                                    <Text style={styles.transactionText}>
+                                        {newTransaction.date ? newTransaction.date : "Set Date"}
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+
+                            {/* Calendário */}
+                            <Modal animationType="none" transparent={true} visible={calendarVisible}>
+                                <View style={styles.centerView}>
+                                    <View style={styles.modalView}>
+                                        <View style={styles.calendarContainer}>
+                                            <Calendar
+                                                onDayPress={(day: DateData) => {
+                                                    setNewTransaction({ ...newTransaction, date: day.dateString });
+                                                    setCalendarVisible(false);
+                                                }}
+                                                markedDates={{
+                                                    [newTransaction.date || '']: { selected: true, marked: true, selectedColor: '#007bff' },
+                                                }}
+                                            />
+                                        </View>
+                                        <TouchableOpacity style={styles.button} onPress={() => setCalendarVisible(false)}>
+                                            <Text style={styles.dateButtonText}>Fechar Calendário</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                </View>
+                            </Modal>
+
+                            {/* Botão "Add" */}
+                            <TouchableOpacity
+                                style={[
+                                    styles.addCancelButtons, // Estilo fixo
+                                    { backgroundColor: getButtonColor() }, // Cor dinâmica
+                                ]}
+                                onPress={addTransaction}
+                            >
+                                <Text style={styles.addCancelButtonText}>
+                                    {selectedType === 'Recepie' ? '+ Add Recepie' : '+ Add Expense'}
+                                </Text>
+                            </TouchableOpacity>
+                        </Animated.View>
+                    </GestureDetector>
                 </View>
-                <View style={styles.modalButtons}>
-                    <TouchableOpacity style = { styles.addCancelButtons } onPress={addTransaction}><Text style = { styles.addCancelButtonText }>Add</Text></TouchableOpacity>
-                    <TouchableOpacity style = { styles.addCancelButtons } onPress={() => setModalVisible(false)}><Text style = { styles.addCancelButtonText }>Cancel</Text></TouchableOpacity>
-                </View>
-            </View>
-            </View>
-        </Modal>          
+            </Modal>
         </View>
     );
 };
@@ -283,21 +335,26 @@ const styles = StyleSheet.create({
     screen: {
         flex: 1,
     },
+
     scrollContainer: {
         paddingBottom: 140,
+        
     },
+
     title: {
         fontSize: 18,
         marginLeft: 15,
         marginTop: 10,
         color: '#666',
     },
+
     card: {
         margin: 10,
         borderRadius: 10,
         elevation: 4,
         backgroundColor: "white",
     },
+
     createButton: {
         position: 'absolute',
         bottom: 90,
@@ -310,47 +367,57 @@ const styles = StyleSheet.create({
         backgroundColor: '#007bff',
         elevation: 5,
     },
+
     buttonText: {
         color: '#fff',
         fontSize: 30,
         textAlign: 'center',
     },
+
     transactionRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingVertical: 10,
     },
+
     transactionInfo: {
         flexDirection: 'row',
         alignItems: 'center',
     },
+
     transactionName: {
         fontSize: 16,
         color: '#333',
         marginBottom: 4,
         marginLeft: 5,
     },
+
     transactionDate: {
         fontSize: 12,
         color: '#666',
         marginLeft: 5,
     },
+
     transactionValue: {
         fontSize: 16,
         fontWeight: 'bold',
         marginRight: 15,
     },
+
     transactionText: {
         fontSize: 16,
         marginRight: 15,
     },
+
     positive: {
         color: '#4CAF50',
     },
+
     negative: {
         color: '#F44336',
     },
+
     iconContainerWeak: {
         width: 32,
         height: 32,
@@ -360,45 +427,61 @@ const styles = StyleSheet.create({
         marginRight: 5,
         marginLeft: 10,
     },
+
     modalContainer: {
         flex: 1,
-        justifyContent: 'flex-start', 
+        justifyContent: 'flex-end', 
         alignItems: 'center',
         backgroundColor: 'rgba(0, 0, 0, 0.5)', 
     },
+
     modalContent: {
-        width: '100%',
-        height: '100%', 
-        padding: 20,
+        borderTopLeftRadius: 30,
+        borderTopRightRadius: 30,
         backgroundColor: 'white',
-        borderRadius: 0, 
+        position: 'absolute',
+        bottom: 0,
+        width: '100%',
+        height: '60%',
+        padding: 20,
     },
+
+    dragIndicator: {
+        width: 40,
+        height: 5,
+        backgroundColor: '#ccc',
+        borderRadius: 5,
+        alignSelf: 'center',
+        marginTop: -10,
+        marginBottom: 10,
+    },
+
     modalTitle: {
         fontSize: 18,
         fontWeight: 'bold',
         marginBottom: 10,
         textAlign: 'center',
     },
-    modalButtons: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginTop: 10,
-        borderRadius: 30,
-        marginBottom: 20, // Adiciona uma margem para os botões não ficarem colados ao fundo
-    },
-    addCancelButtons: {
-        borderRadius: 10,
-        backgroundColor: "#007bff",
-        height: 40,
-        width: 90,
-        marginHorizontal: 50,
 
+    modalButtons: {
+        flex: 1,
+        justifyContent: 'flex-end',
+        marginBottom: 20, 
     },
+
+    addCancelButtons: {
+        paddingVertical: 12, // Espaçamento interno vertical
+        paddingHorizontal: 25, // Espaçamento interno horizontal
+        borderRadius: 8, // Bordas arredondadas
+        alignSelf: 'center', // Centraliza o botão horizontalmente
+        width: '80%', // Largura responsiva
+        alignItems: 'center', // Centraliza o conteúdo horizontalmente
+    },
+    
     addCancelButtonText: {
         color: '#fff',
-        fontSize: 18,
-        textAlign: 'center',
-        alignItems: 'center',
+        fontSize: 18, // Tamanho de fonte adequado
+        fontWeight: 'bold', // Texto em negrito para melhor legibilidade
     },
     input: {
         borderWidth: 1,
@@ -422,14 +505,19 @@ const styles = StyleSheet.create({
         borderRadius: 8,
     },
     switcherButtonActive: {
-        backgroundColor: "#007bff",
-    },
+        backgroundColor: "#fff",
+        shadowColor: "#000",
+        shadowOffset: { width: 1, height: 1 }, // Sombras laterais
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        elevation: 4, // Para Android
+    },    
     switcherText: {
         fontSize: 16,
         color: "#333",
     },
     switcherTextActive: {
-        color: "#FFF",
+        color: "#333",
         fontWeight: "bold",
     }, 
     dateButton: { 
@@ -447,13 +535,14 @@ const styles = StyleSheet.create({
     modalView: { 
         backgroundColor: 'white',
         padding: 20,
+        borderWidth: 1,
+        borderColor: '#333',
         elevation: 5 
     },
     calendarContainer: { 
         padding: 10, 
         backgroundColor: 'white', 
-        borderRadius: 10, 
-        elevation: 3 
+        elevation: 3, 
     },
     centerView: {
         flex: 1,
@@ -512,7 +601,11 @@ const styles = StyleSheet.create({
         height: 150,
         backgroundColor: '#fff', 
         borderRadius: 20,
-        elevation: 4,
+        shadowColor: "#000",
+        shadowOffset: { width: 1, height: 1 }, // Sombras laterais
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        elevation: 4, // Para Android
         padding: 15,
         justifyContent: 'space-between',
         marginRight: 10,

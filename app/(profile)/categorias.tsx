@@ -1,8 +1,8 @@
-import React, { useState, useRef } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Image, Modal, Dimensions, FlatList, TextInput } from 'react-native';
-import { Card } from "react-native-paper";
+import React, { useState} from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, Modal, FlatList, TextInput } from 'react-native';
+
 import { Ionicons } from '@expo/vector-icons';
-import { ColorPicker } from 'react-native-color-picker';
+
 
 const initialCategories = [
     { label: "Home", color: "#FF5733" },
@@ -12,51 +12,18 @@ const initialCategories = [
 ];
 
 const Categorias = () => {
-
-    const [open, setOpen] = useState(false); 
+ 
     const [categories, setCategories] = useState(initialCategories);
-    const [selectedCategory, setSelectedCategory] = useState(categories[0]);
-    const [modalVisible, setModalVisible] = useState(false);
     const [addCategoryModal, setAddCategoryModal] = useState(false);
     const [newCategory, setNewCategory] = useState({ label: '', color: initialCategories[0].color });
-    const [colorPickerVisible, setColorPickerVisible] = useState(false);
-    const dropdownRef = useRef<View>(null); // Definir um ref corretamente tipado
-    const [dropdownPosition, setDropdownPosition] = useState({ x: 0, y: 0, width: 0 });
-    const screenWidth = Dimensions.get('window').width;
-    const screenHeight = Dimensions.get('window').height;
     
-        const openDropdown = () => {
-            if (dropdownRef.current) {
-                dropdownRef.current.measure((fx, fy, width, height, px, py) => {
-                    const dropdownHeight = categories.length * 40; // Aproximadamente 40px por item
-                    let newY = py + height; // Posição abaixo do botão
-                    let newX = px;
-                    
-                    // Ajustar a posição para não sair da tela na vertical
-                    if (newY + dropdownHeight > screenHeight) {
-                        newY = py - dropdownHeight - 10; // Move para cima se ultrapassar a tela
-                    }
-        
-                    // Ajustar a posição para não sair da tela na horizontal
-                    if (newX + width > screenWidth - 10) {
-                        newX = screenWidth - width - 10; // Mantém dentro da tela
-                    }
-                    if (newX < 10) {
-                        newX = 10; // Margem mínima para não colar na borda esquerda
-                    }
-        
-                    setDropdownPosition({ x: newX, y: newY, width });
-                    setModalVisible(true);
-                });
-            }
-        };
-        const addNewCategory = () => {
-            if (newCategory.label.trim() !== '') {
-                setCategories([...categories, newCategory]);
-                setNewCategory({ label: '', color: initialCategories[0].color });
-                setAddCategoryModal(false);
-            }
-        };    
+    const addNewCategory = () => {
+        if (newCategory.label.trim() !== '') {
+            setCategories([...categories, newCategory]);
+            setNewCategory({ label: '', color: initialCategories[0].color });
+            setAddCategoryModal(false);
+        }
+    };    
 
     return (
         <View>
@@ -157,21 +124,24 @@ const styles = StyleSheet.create ({
     },
     modalContainer: {
         flex: 1,
-        justifyContent: 'center',
+        justifyContent: 'flex-end', 
         alignItems: 'center',
-        backgroundColor: 'rgba(0,0,0,0.5)',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)', 
     },
     modalContent: {
-        backgroundColor: 'white',
+        width: '100%',
+        height: '60%', 
         padding: 20,
-        borderRadius: 10,
-        width: '80%',
+        backgroundColor: 'white',
+        borderTopLeftRadius: 30, 
+        borderTopRightRadius: 30,
+
     },
     input: {
         borderBottomWidth: 1,
         borderBottomColor: '#ccc',
         marginBottom: 10,
-        fontSize: 16,
+        fontSize: 24,
     },
     saveButton: {
         backgroundColor: '#4CAF50',
@@ -184,8 +154,8 @@ const styles = StyleSheet.create ({
         fontSize: 16,
     },  
     colorOption: {
-        width: 30,
-        height: 30,
+        width: 25,
+        height: 25,
         borderRadius: 15,
         margin: 5,
         borderWidth: 2,

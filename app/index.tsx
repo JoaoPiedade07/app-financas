@@ -1,10 +1,13 @@
 import { Redirect } from 'expo-router';
 import { ThemeProvider } from '@/components/ThemeContext';
+import { TransactionProvider } from './Transactions/TransactionContext';
 
 const StartPage = () => {
     return (
         <ThemeProvider>
-            <Redirect href = "/home" />;
+            <TransactionProvider>
+                <Redirect href = "/home" />;
+            </TransactionProvider>
         </ThemeProvider>
     )
 };

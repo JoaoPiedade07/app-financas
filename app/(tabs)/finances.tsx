@@ -1,10 +1,11 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useContext } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Modal, TextInput, Button, Dimensions, FlatList } from 'react-native';
 import { Calendar, DateData } from 'react-native-calendars';
 import { BarChart } from '@mui/x-charts/BarChart';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import { TransactionContext } from '../Transactions/TransactionContext';
 
 
 const categories = [
@@ -36,14 +37,30 @@ const Finances = () => {
     const screenWidth = Dimensions.get('window').width;
     const screenHeight = Dimensions.get('window').height;
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
-    const [selectedType, setSelectedType] = useState('Expense'); // Default como despesa
+    const [selectedType, setSelectedType] = useState<'Recepies' | 'Expense'>('Expense'); // Default como despesa
     const [newTransaction, setNewTransaction] = useState({ name: '', date: '', value: '' });
     const [calendarVisible, setCalendarVisible] = useState(false);
     const translateY = useSharedValue(0); // Controla a posição vertical do modal
     const isModalOpen = useSharedValue(true); // Indica se o modal está aberto
+    const { addTransaction } = useContext(TransactionContext);
+    
+    const handleAddTransaction = () => {
+        if (!newTransaction.name || !newTransaction.date || ! newTransaction.value) return;
+
+        const newEntry = {
+            id: Date.now(),
+            name: newTransaction.name,
+            date: newTransaction.date,
+            value: selectedType === 'Recepies' ? parseFloat(newTransaction.value) : -Math.abs(parseFloat(newTransaction.value)),
+            type: selectedType,
+        };
+
+        addTransaction(newEntry); //Adiciona a transação ao contexto
+        setNewTransaction({ name: '', date: '', value: '' });
+    }
 
     const getButtonColor = () => {
-        return selectedType === 'Recepie' ? '#4CAF50' : '#F44336'; // Verde para Recepie, Vermelho para Expense
+        return selectedType === 'Recepies' ? '#4CAF50' : '#F44336'; // Verde para Recepie, Vermelho para Expense
     };
     
     const openDropdown = () => {
@@ -70,22 +87,6 @@ const Finances = () => {
                 setModalVisibleCategories(true);
             });
         }
-    };
-
-    const addTransaction = () => {
-        if (!newTransaction.name || !newTransaction.date || !newTransaction.value) return;
-
-    const newEntry = {
-        id: transactions.length + 1,
-        name: newTransaction.name,
-        date: newTransaction.date,
-        value: selectedType === 'Recepies' ? parseFloat(newTransaction.value) : -Math.abs(parseFloat(newTransaction.value)),
-        type: selectedType
-    };
-
-        setTransactions([...transactions, newEntry]);
-        setNewTransaction({ name: '', date: '', value: '' });
-        setModalVisible(false);
     };
 
     const gesture = Gesture.Pan()
@@ -119,7 +120,7 @@ const Finances = () => {
         <View style={styles.screen}>
             <ScrollView contentContainerStyle={styles.scrollContainer}>
             <BarChart
-                xAxis={[{ scaleType: 'band', data: [ 'Receits', 'Expenses' ] }]}
+                xAxis={[{ scaleType: 'band', data: [ 'Recepies', 'Expenses' ] }]}
                 series={[{ data: [1, 7] }, { data: [6, 2] }]}
                 width={400}
                 height={250}
@@ -196,7 +197,7 @@ const Finances = () => {
                                             styles.switcherButton,
                                             selectedType === type && styles.switcherButtonActive
                                         ]}
-                                        onPress={() => setSelectedType(type)}
+                                        onPress={() => setSelectedType(type as 'Recepies' | 'Expense')}
                                     >
                                         <Text
                                             style={[
@@ -317,10 +318,10 @@ const Finances = () => {
                                     styles.addCancelButtons, // Estilo fixo
                                     { backgroundColor: getButtonColor() }, // Cor dinâmica
                                 ]}
-                                onPress={addTransaction}
+                                onPress={ handleAddTransaction }
                             >
                                 <Text style={styles.addCancelButtonText}>
-                                    {selectedType === 'Recepie' ? '+ Add Recepie' : '+ Add Expense'}
+                                    {selectedType === 'Recepies' ? '+ Add Recepie' : '+ Add Expense'}
                                 </Text>
                             </TouchableOpacity>
                         </Animated.View>

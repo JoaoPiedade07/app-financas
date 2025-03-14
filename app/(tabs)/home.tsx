@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { StyleSheet, Text, View, Dimensions, TouchableOpacity, ScrollView, Image, FlatList } from 'react-native';
 import { VictoryPie } from "victory";
 import { Card } from "react-native-paper";
 import { Ionicons } from '@expo/vector-icons';
+import { TransactionContext } from '../Transactions/TransactionContext';
 
 const screenWidth = Dimensions.get("window").width;
 
@@ -14,6 +15,8 @@ const Home = () => {
         { label: "Transporte", value: 10, color: "#3357FF", euro: "21.99" },
         { label: "Personal", value: 20, color: "#FF33A1", euro: "110.00" },
     ];
+
+    const { totalRecepies, totalExpenses } = useContext(TransactionContext);
 
     return (
         <View style={styles.screen}>
@@ -42,7 +45,7 @@ const Home = () => {
                                 </View>
                                 <View style={styles.infoTextColumn}>
                                     <Text style={styles.infoText}>Recepies</Text>
-                                    <Text style={[ styles.infoValue, styles.positive ]}>4.000.00€</Text>
+                                    <Text style={[ styles.infoValue, styles.positive ]}>{ totalRecepies.toFixed(2) }€</Text>
                                 </View>
                                 </View>
                             </View>
@@ -59,7 +62,7 @@ const Home = () => {
                                 </View>
                                 <View style={styles.infoTextColumn}>
                                     <Text style={styles.infoText}>Expenses</Text>
-                                    <Text style={[ styles.infoValue, styles.negative ]}>7.569.45€</Text>
+                                    <Text style={[ styles.infoValue, styles.negative ]}>{ totalExpenses.toFixed(2) }€</Text>
                                 </View>
                                 </View>
                             </View>

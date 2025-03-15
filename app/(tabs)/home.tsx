@@ -3,11 +3,14 @@ import { StyleSheet, Text, View, Dimensions, TouchableOpacity, ScrollView, Image
 import { VictoryPie } from "victory";
 import { Card } from "react-native-paper";
 import { Ionicons } from '@expo/vector-icons';
-import { TransactionContext } from '../Transactions/TransactionContext';
+import { transformSync } from '@babel/core';
+import { useTransactions } from '../Transactions/TransactionContent';
 
 const screenWidth = Dimensions.get("window").width;
 
 const Home = () => {
+
+    const { transactions } = useTransactions();
 
     const data = [
         { label: "Home", value: 30, color: "#FF5733", euro: "250.00" },
@@ -16,7 +19,18 @@ const Home = () => {
         { label: "Personal", value: 20, color: "#FF33A1", euro: "110.00" },
     ];
 
-    const { totalRecepies, totalExpenses } = useContext(TransactionContext);
+    const formattedTransactions = transactions.map(transaction => ({
+        id: transaction.id.toString(),
+        type: transaction.type === 'Recepies' ? 'income' : 'expense',
+        name: transaction.name,
+        date: transaction.date,
+        value: transaction.value >= 0 ? `+${transaction.value.toFixed(2)}` 
+        : `${transaction.value.toFixed(2)}`,
+        iconColor: transaction.iconColor || (transaction.type ===
+            'Recepies' ? '#4CAF50' : '#F44336'),
+        iconName: transaction.iconName || (transaction.type ===
+            'Recepies' ? 'arrow-up-outline' : 'arrow-down-outline')
+    }));
 
     return (
         <View style={styles.screen}>
@@ -45,7 +59,7 @@ const Home = () => {
                                 </View>
                                 <View style={styles.infoTextColumn}>
                                     <Text style={styles.infoText}>Recepies</Text>
-                                    <Text style={[ styles.infoValue, styles.positive ]}>{ totalRecepies.toFixed(2) }€</Text>
+                                    <Text style={[ styles.infoValue, styles.positive ]}>€</Text>
                                 </View>
                                 </View>
                             </View>
@@ -62,7 +76,7 @@ const Home = () => {
                                 </View>
                                 <View style={styles.infoTextColumn}>
                                     <Text style={styles.infoText}>Expenses</Text>
-                                    <Text style={[ styles.infoValue, styles.negative ]}>{ totalExpenses.toFixed(2) }€</Text>
+                                    <Text style={[ styles.infoValue, styles.negative ]}>€</Text>
                                 </View>
                                 </View>
                             </View>
@@ -125,60 +139,28 @@ const Home = () => {
                     )}
                 />
                 <Text style={styles.title}>Weak Transactions</Text>
-                {/* Transação 1 */}
-                <View style={styles.transactionRow}>
-                    <View style={styles.transactionInfo}>
-                        <View style={[styles.iconContainerWeak, { backgroundColor: '#4CAF50' }]}>
-                            <Ionicons name="arrow-up-outline" size={18} color="white" />
+                { formattedTransactions.map((transaction) => (
+                    <View key={transaction.id} style = {styles.transactionRow}>
+                        <View style = {styles.transactionInfo}>
+                            <View style = {[styles.iconContainerWeak, { 
+                                backgroundColor: transaction.iconColor }]}>
+                                    <Ionicons name = {transaction.iconName as any} size = {18} color = "white" />
+                            </View>
+                            <View>
+                                <Text style = {styles.transactionName}>
+                                    {transaction.name}</Text>
+                                <Text style = {styles.transactionDate}>
+                                    {transaction.date}</Text>
+                            </View>
                         </View>
-                        <View>
-                            <Text style={styles.transactionName}>App UI</Text>
-                            <Text style={styles.transactionDate}>12 Set 2025</Text>
-                        </View>
+                        <Text style = {[styles.transactionValue,
+                            transaction.type === 'income' ? styles.positive 
+                            : styles.negative,]}>
+                                {transaction.value}
+                            </Text>
                     </View>
-                    <Text style={[styles.transactionValue, styles.positive]}>+10.000</Text>
-                </View>
+                ))}
 
-                {/* Transação 2 */}
-                <View style={styles.transactionRow}>
-                    <View style={styles.transactionInfo}>
-                        <View style={[styles.iconContainerWeak, { backgroundColor: '#F44336' }]}>
-                            <Ionicons name="arrow-down-outline" size={18} color="white" />
-                        </View>
-                        <View>
-                            <Text style={styles.transactionName}>Shopping</Text>
-                            <Text style={styles.transactionDate}>10 Set 2025</Text>
-                        </View>
-                    </View>
-                    <Text style={[styles.transactionValue, styles.negative]}>-120.99</Text>
-                </View>
-
-                {/* Transação 3 */}
-                <View style={styles.transactionRow}>
-                    <View style={styles.transactionInfo}>
-                        <View style={[styles.iconContainerWeak, { backgroundColor: '#4CAF50' }]}>
-                            <Ionicons name="arrow-up-outline" size={18} color="white" />
-                        </View>
-                        <View>
-                            <Text style={styles.transactionName}>Visual Design</Text>
-                            <Text style={styles.transactionDate}>08 Set 2025</Text>
-                        </View>
-                    </View>
-                    <Text style={[styles.transactionValue, styles.positive]}>+300.00</Text>
-                </View>
-
-                <View style={styles.transactionRow}>
-                    <View style={styles.transactionInfo}>
-                        <View style={[styles.iconContainerWeak, { backgroundColor: '#F44336' }]}>
-                            <Ionicons name="arrow-down-outline" size={18} color="white" />
-                        </View>
-                        <View>
-                            <Text style={styles.transactionName}>Food Shopping</Text>
-                            <Text style={styles.transactionDate}>23 Dec 2025</Text>
-                        </View>
-                    </View>
-                    <Text style={[styles.transactionValue, styles.negative]}>-30.45</Text>
-                </View>
             </ScrollView>
 
         </View>

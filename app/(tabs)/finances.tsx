@@ -1,12 +1,11 @@
-import React, { useState, useRef, useContext } from 'react';
+import React, { useState, useRef } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Modal, TextInput, Button, Dimensions, FlatList } from 'react-native';
 import { Calendar, DateData } from 'react-native-calendars';
 import { BarChart } from '@mui/x-charts/BarChart';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
-import { TransactionContext } from '../Transactions/TransactionContext';
-
+import { useTransactions } from '../Transactions/TransactionContent';
 
 const categories = [
     { label: "Home", color: "#FF5733" }, //Color - Red
@@ -21,12 +20,6 @@ const data = [
   ];
 
 const Finances = () => {
-    const [transactions, setTransactions] = useState([
-        { id: 1, name: 'App UI', date: '12 Set 2025', value: 10000, type: 'Recepies' },
-        { id: 2, name: 'Food Shopping', date: '23 Dec 2025', value: -30.45, type: 'Expense' },
-        { id: 3, name: 'Shopping', date: '10 Set 2025', value: -120.99, type: 'Expense' },
-        { id: 4, name: 'Visual Design', date: '08 Set 2025', value: 300, type: 'Recepies' }
-    ]);
 
     const [open, setOpen] = useState(false); 
     const [selectedCategory, setSelectedCategory] = useState(categories[0]);
@@ -37,32 +30,17 @@ const Finances = () => {
     const screenWidth = Dimensions.get('window').width;
     const screenHeight = Dimensions.get('window').height;
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
-    const [selectedType, setSelectedType] = useState<'Recepies' | 'Expense'>('Expense'); // Default como despesa
+    const [selectedType, setSelectedType] = useState('Expenses'); // Default como despesa
     const [newTransaction, setNewTransaction] = useState({ name: '', date: '', value: '' });
     const [calendarVisible, setCalendarVisible] = useState(false);
     const translateY = useSharedValue(0); // Controla a posição vertical do modal
     const isModalOpen = useSharedValue(true); // Indica se o modal está aberto
-    const { addTransaction } = useContext(TransactionContext);
-    
-    const handleAddTransaction = () => {
-        if (!newTransaction.name || !newTransaction.date || ! newTransaction.value) return;
-
-        const newEntry = {
-            id: Date.now(),
-            name: newTransaction.name,
-            date: newTransaction.date,
-            value: selectedType === 'Recepies' ? parseFloat(newTransaction.value) : -Math.abs(parseFloat(newTransaction.value)),
-            type: selectedType,
-        };
-
-        addTransaction(newEntry); //Adiciona a transação ao contexto
-        setNewTransaction({ name: '', date: '', value: '' });
-    }
+    const { transactions, addTransaction } = useTransactions();
 
     const getButtonColor = () => {
         return selectedType === 'Recepies' ? '#4CAF50' : '#F44336'; // Verde para Recepie, Vermelho para Expense
     };
-    
+
     const openDropdown = () => {
         if (dropdownRef.current) {
             dropdownRef.current.measure((fx, fy, width, height, px, py) => {
@@ -89,38 +67,59 @@ const Finances = () => {
         }
     };
 
-    const gesture = Gesture.Pan()
-    .onStart(() => {
-        // Quando o usuário começa a arrastar
-    })
-    .onUpdate((event) => {
-        if (event.translationY > 0) {
-            translateY.value = event.translationY; // Move o modal para baixo
-        }
-    })
-    .onEnd((event) => {
-        if (event.translationY > screenHeight * 0.3) {
-            // Fecha o modal se o usuário arrastar mais de 30% da tela
-            translateY.value = withTiming(screenHeight, { duration: 300 });
-            isModalOpen.value = false;
-            setTimeout(() => setModalVisible(false), 300); // Fecha o modal após a animação
-        } else {
-            // Volta ao topo se o usuário não arrastar o suficiente
-            translateY.value = withTiming(0, { duration: 300 });
-        }
-    });
+    const handleAddTransaction = () => {
+        if (!newTransaction.name || !newTransaction.date || !newTransaction.value) return;
 
-    const animatedStyle = useAnimatedStyle(() => {
-        return {
-            transform: [{ translateY: translateY.value }],
+        const newEntry = {
+            id: Date.now().toString(),
+            name: newTransaction.name,
+            date: newTransaction.date,
+            value: selectedType === 'Recepies' ? 
+            parseFloat(newTransaction.value) : -Math.abs(parseFloat(newTransaction.value)),
+            type: selectedType as 'Recepies' | 'Expenses',
+            category: selectedCategory.label,
+            iconColor: selectedType === 'Recepies' ? '#4CAF50' : '#F44336',
+            iconName: selectedType === 'Recepies' ? "arrow-up-outline" : "arrow-down-outline"
         };
-    });
+    
+            addTransaction(newEntry);
 
-    return (
-        <View style={styles.screen}>
-            <ScrollView contentContainerStyle={styles.scrollContainer}>
-            <BarChart
-                xAxis={[{ scaleType: 'band', data: [ 'Recepies', 'Expenses' ] }]}
+            setNewTransaction({ name: '', date: '', value: '' });
+            setModalVisible(false);
+        };
+    
+        const gesture = Gesture.Pan()
+        .onStart(() => {
+            // Quando o usuário começa a arrastar
+        })
+        .onUpdate((event) => {
+            if (event.translationY > 0) {
+                translateY.value = event.translationY; // Move o modal para baixo
+            }
+        })
+        .onEnd((event) => {
+            if (event.translationY > screenHeight * 0.3) {
+                // Fecha o modal se o usuário arrastar mais de 30% da tela
+                translateY.value = withTiming(screenHeight, { duration: 300 });
+                isModalOpen.value = false;
+                setTimeout(() => setModalVisible(false), 300); // Fecha o modal após a animação
+            } else {
+                // Volta ao topo se o usuário não arrastar o suficiente
+                translateY.value = withTiming(0, { duration: 300 });
+            }
+        });
+    
+        const animatedStyle = useAnimatedStyle(() => {
+            return {
+                transform: [{ translateY: translateY.value }],
+            };
+        });
+    
+        return (
+            <View style={styles.screen}>
+                <ScrollView contentContainerStyle={styles.scrollContainer}>
+                <BarChart
+                xAxis={[{ scaleType: 'band', data: [ 'Receits', 'Expenses' ] }]}
                 series={[{ data: [1, 7] }, { data: [6, 2] }]}
                 width={400}
                 height={250}
@@ -170,6 +169,15 @@ const Finances = () => {
             </ScrollView>
 
             {/* Botão flutuante para adicionar nova despesa */}
+
+            <TouchableOpacity style={styles.createButton} onPress={() => {setModalVisible(true); 
+                translateY.value = withTiming(0, { duration: 300 });
+                isModalOpen.value = true;}} >
+                <Text style={styles.buttonText}>+</Text>
+            </TouchableOpacity>
+
+
+            {/* Modal para adicionar transação */}
             <TouchableOpacity style={styles.createButton} onPress={() => {setModalVisible(true); 
                 translateY.value = withTiming(0, { duration: 300 });
                 isModalOpen.value = true;}} >
@@ -184,22 +192,20 @@ const Finances = () => {
                         <Animated.View style={[styles.modalContent, animatedStyle]}>
                             {/* Tracinho no topo */}
                             <View style={styles.dragIndicator} />
-
-                            {/* Título */}
-                            <Text style={styles.modalTitle}>New Transaction</Text>
-
-                            {/* Switcher */}
+                             {/* Título */}
+                             <Text style={styles.modalTitle}>New Transaction</Text>
+                                {/* Switcher */}
                             <View style={styles.switcherContainer}>
-                                {['Recepie', 'Expense'].map((type) => (
+                                {['Recepies', 'Expenses'].map((type) => (
                                     <TouchableOpacity
                                         key={type}
                                         style={[
                                             styles.switcherButton,
                                             selectedType === type && styles.switcherButtonActive
                                         ]}
-                                        onPress={() => setSelectedType(type as 'Recepies' | 'Expense')}
+                                        onPress={() => setSelectedType(type)}
                                     >
-                                        <Text
+                                    <Text
                                             style={[
                                                 styles.switcherText,
                                                 selectedType === type && styles.switcherTextActive
@@ -208,9 +214,8 @@ const Finances = () => {
                                             {type}
                                         </Text>
                                     </TouchableOpacity>
-                                ))}
+                                    ))}
                             </View>
-
                             {/* Campos de entrada */}
                             <TextInput
                                 style={styles.input}
@@ -241,9 +246,8 @@ const Finances = () => {
                                     </View>
                                 </TouchableOpacity>
                             </View>
-
-                            {/* Dropdown de categorias */}
-                            <Modal
+                             {/* Dropdown de categorias */}
+                             <Modal
                                 animationType="none"
                                 transparent={true}
                                 visible={modalVisibleCategories}
@@ -289,9 +293,8 @@ const Finances = () => {
                                     </Text>
                                 </TouchableOpacity>
                             </View>
-
-                            {/* Calendário */}
-                            <Modal animationType="none" transparent={true} visible={calendarVisible}>
+                             {/* Calendário */}
+                             <Modal animationType="none" transparent={true} visible={calendarVisible}>
                                 <View style={styles.centerView}>
                                     <View style={styles.modalView}>
                                         <View style={styles.calendarContainer}>
@@ -318,7 +321,7 @@ const Finances = () => {
                                     styles.addCancelButtons, // Estilo fixo
                                     { backgroundColor: getButtonColor() }, // Cor dinâmica
                                 ]}
-                                onPress={ handleAddTransaction }
+                                onPress={handleAddTransaction}
                             >
                                 <Text style={styles.addCancelButtonText}>
                                     {selectedType === 'Recepies' ? '+ Add Recepie' : '+ Add Expense'}
@@ -327,7 +330,7 @@ const Finances = () => {
                         </Animated.View>
                     </GestureDetector>
                 </View>
-            </Modal>
+                </Modal>
         </View>
     );
 };
@@ -469,7 +472,6 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-end',
         marginBottom: 20, 
     },
-
     addCancelButtons: {
         paddingVertical: 12, // Espaçamento interno vertical
         paddingHorizontal: 25, // Espaçamento interno horizontal
@@ -542,7 +544,7 @@ const styles = StyleSheet.create({
     },
     calendarContainer: { 
         padding: 10, 
-        backgroundColor: 'white', 
+        backgroundColor: 'white',
         elevation: 3, 
     },
     centerView: {

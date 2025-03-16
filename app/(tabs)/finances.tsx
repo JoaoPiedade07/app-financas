@@ -169,14 +169,24 @@ const Finances = () => {
                 ))}
             </ScrollView>
 
+            {/* Modal para eliminar transação */}
+
+            <Modal visible={modalVisible} animationType='none' transparent={true}>
+                <View style = {styles.modalContainer}>
+                    <GestureDetector gesture={gesture}>
+                        <Animated.View style = {[styles.modalContent, animatedStyle]}>
+                            <View style = {styles.dragIndicator}/>
+
+                            <Text style={styles.modalTitle}>Delete Transaction</Text>
+                            
+                        </Animated.View>
+                    </GestureDetector>
+                </View>
+            </Modal>
+
             {/* Botão flutuante para adicionar nova despesa */}
 
-            <TouchableOpacity style={styles.createButton} onPress={() => {setModalVisible(true); 
-                translateY.value = withTiming(0, { duration: 300 });
-                isModalOpen.value = true;}} >
-                <Text style={styles.buttonText}>+</Text>
-            </TouchableOpacity>
-
+    
             {/* Modal para adicionar transação */}
             <TouchableOpacity style={styles.createButton} onPress={() => {setModalVisible(true); 
                 translateY.value = withTiming(0, { duration: 300 });

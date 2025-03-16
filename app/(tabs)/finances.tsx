@@ -77,7 +77,8 @@ const Finances = () => {
             value: selectedType === 'Recepies' ? 
             parseFloat(newTransaction.value) : -Math.abs(parseFloat(newTransaction.value)),
             type: selectedType as 'Recepies' | 'Expenses',
-            category: selectedCategory.label,
+            category: selectedType === 'Recepies' ? 'Income' :
+            selectedCategory.label,
             iconColor: selectedType === 'Recepies' ? '#4CAF50' : '#F44336',
             iconName: selectedType === 'Recepies' ? "arrow-up-outline" : "arrow-down-outline"
         };
@@ -176,14 +177,12 @@ const Finances = () => {
                 <Text style={styles.buttonText}>+</Text>
             </TouchableOpacity>
 
-
             {/* Modal para adicionar transação */}
             <TouchableOpacity style={styles.createButton} onPress={() => {setModalVisible(true); 
                 translateY.value = withTiming(0, { duration: 300 });
                 isModalOpen.value = true;}} >
                 <Text style={styles.buttonText}>+</Text>
             </TouchableOpacity>
-
 
             {/* Modal para adicionar transação */}
             <Modal visible={modalVisible} animationType="none" transparent={true}>
@@ -232,20 +231,22 @@ const Finances = () => {
                             />
 
                             {/* Categoria */}
-                            <View style={styles.transactionRow}>
-                                <View style={styles.transactionInfo}>
-                                    <View style={[styles.iconContainerWeak, { backgroundColor: '#4CAF50' }]}>
-                                        <Ionicons name="pricetag-outline" size={18} color="white" />
-                                    </View>
-                                    <Text style={styles.transactionName}>Category</Text>
-                                </View>
-                                <TouchableOpacity ref={dropdownRef} onPress={openDropdown}>
+                            {selectedType === 'Expenses' && (
+                                <>
+                                <View style={styles.transactionRow}>
                                     <View style={styles.transactionInfo}>
-                                        <View style={[styles.colorBox, { backgroundColor: selectedCategory.color }]}></View>
-                                        <Text style={styles.transactionText}>{selectedCategory.label}</Text>
+                                        <View style={[styles.iconContainerWeak, { backgroundColor: '#4CAF50' }]}>
+                                            <Ionicons name="pricetag-outline" size={18} color="white" />
+                                        </View>
+                                        <Text style={styles.transactionName}>Category</Text>
                                     </View>
-                                </TouchableOpacity>
-                            </View>
+                                    <TouchableOpacity ref={dropdownRef} onPress={openDropdown}>
+                                        <View style={styles.transactionInfo}>
+                                            <View style={[styles.colorBox, { backgroundColor: selectedCategory.color }]}></View>
+                                            <Text style={styles.transactionText}>{selectedCategory.label}</Text>
+                                        </View>
+                                    </TouchableOpacity>
+                                </View>
                              {/* Dropdown de categorias */}
                              <Modal
                                 animationType="none"
@@ -278,6 +279,8 @@ const Finances = () => {
                                     </View>
                                 </TouchableOpacity>
                             </Modal>
+                            </>
+                            )}
 
                             {/* Data */}
                             <View style={styles.transactionRow}>

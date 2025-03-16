@@ -12,11 +12,43 @@ const Home = () => {
 
     const { transactions } = useTransactions();
 
-    const data = [
-        { label: "Home", value: 30, color: "#FF5733", euro: "250.00" },
-        { label: "Food", value: 40, color: "#33FF57", euro: "339.70" },
-        { label: "Transporte", value: 10, color: "#3357FF", euro: "21.99" },
-        { label: "Personal", value: 20, color: "#FF33A1", euro: "110.00" },
+    const totalIncome = transactions.filter(t => t.type === 'Recepies').reduce((sum, t) => sum + Math.abs(t.value), 0);
+    const totalExpense = transactions.filter(t => t.type === 'Expenses').reduce((sum, t) => sum + Math.abs(t.value), 0);
+    const totalBalance = totalIncome - totalExpense;
+
+    const expensesByCategory = transactions
+        .filter(t => t.type === 'Expenses')
+        .reduce((acc, transaction) => {
+            const category = transaction.category || 'Other';
+            if (!acc[category]) {
+                acc[category] = 0;
+            }
+            acc[category] += Math.abs(transaction.value);
+            return acc;
+        }, {} as Record<string, number>);
+
+        const categoryColors: Record<string, string> = {
+            "Home": "#FF5733",
+            "Food": "#33FF57",
+            "Transporte": "#3357FF",
+            "Personal": "#FF33A1",
+            "Other": "#CCCCCC"
+        };
+
+        //Create data for VictoryPie
+        const pieData = Object.entries(expensesByCategory).map
+        (([label, value]) => ({
+            label,
+            value,
+            color: categoryColors[label] || '#CCCCCC',
+            euro: value.toFixed(2),
+        }));
+
+    const chartData = pieData.length > 0 ? pieData: [
+        { label: "Home", value: 25, color: "#FF5733", euro: "0.00" },
+        { label: "Food", value: 25, color: "#33FF57", euro: "0.00" },
+        { label: "Transporte", value: 25, color: "#3357FF", euro: "0.00" },
+        { label: "Personal", value: 25, color: "#FF33A1", euro: "0.00" },
     ];
 
     const formattedTransactions = transactions.map(transaction => ({
@@ -32,10 +64,12 @@ const Home = () => {
             'Recepies' ? 'arrow-up-outline' : 'arrow-down-outline')
     }));
 
+    
+
     return (
         <View style={styles.screen}>
             <ScrollView contentContainerStyle={styles.scrollContainer}>
-                <Text style = {{ fontSize: 26, marginLeft: 20, marginTop: 20, }}>6.158.37€</Text>
+                <Text style = {{ fontSize: 26, marginLeft: 20, marginTop: 20, }}>{totalBalance.toFixed(2)}€</Text>
                 <Text style = {{ fontSize: 18, marginLeft: 20, marginBottom: 15, color: '#333' }}>Earnings</Text>
                 <TouchableOpacity style={styles.profileIconContainer}>
                     <Image 
@@ -59,7 +93,7 @@ const Home = () => {
                                 </View>
                                 <View style={styles.infoTextColumn}>
                                     <Text style={styles.infoText}>Recepies</Text>
-                                    <Text style={[ styles.infoValue, styles.positive ]}>€</Text>
+                                    <Text style={[ styles.infoValue, styles.positive ]}>{totalIncome.toFixed(2)}€</Text>
                                 </View>
                                 </View>
                             </View>
@@ -76,7 +110,7 @@ const Home = () => {
                                 </View>
                                 <View style={styles.infoTextColumn}>
                                     <Text style={styles.infoText}>Expenses</Text>
-                                    <Text style={[ styles.infoValue, styles.negative ]}>€</Text>
+                                    <Text style={[ styles.infoValue, styles.negative ]}>{totalExpense.toFixed(2)}€</Text>
                                 </View>
                                 </View>
                             </View>
@@ -89,20 +123,20 @@ const Home = () => {
                         <View style={styles.container}>
                             <View style={styles.chartContainer}>
                                 <VictoryPie
-                                    data={data}
+                                    data={chartData}
                                     x="label"
                                     y="value"
                                     innerRadius={50}
                                     padAngle={3}
                                     labels={() => null}
                                     style={{ labels: { display: "none" } }}
-                                    colorScale={data.map(item => item.color)}
+                                    colorScale={chartData.map(item => item.color)}
                                     width={screenWidth * 0.65}
                                     height={260}
                                 />
                             </View>
                             <View style={styles.legend}>
-                                {data.map((item, index) => (
+                                {chartData.map((item, index) => (
                                     <View key={index} style={styles.legendItem}>
                                         <View style={[styles.colorBox, { backgroundColor: item.color }]} />
                                         <Text style={styles.legendText}>{item.label}</Text>

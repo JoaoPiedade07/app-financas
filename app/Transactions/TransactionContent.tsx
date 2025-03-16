@@ -6,6 +6,7 @@ export interface Transaction { //Define the transaction type
     date: string;
     value: number;
     type: 'Recepies' | 'Expenses';
+    category?: string; 
     iconColor?: string;
     iconName?: string;
 }
@@ -22,22 +23,14 @@ const TransactionContext = createContext<TransactionContextType | undefined>(und
 //Create a provider component
 export const TransactionProvider: React.FC<{children: ReactNode}> = ({
     children }) => {
-        const [transactions, setTransactions] = useState<Transaction[]>([
-            { id: '1', type: 'Recepies', name: 'App UI', date: '12 Set 2025',
-                value: 10000, iconColor: '#4CAF50', iconName: 'arrow-up-outline' },
-            { id: '2', type: 'Expenses', name: 'Shopping', date: '10 Set 2025',
-                value: -120.99, iconColor: '#F44336', iconName: 'arrow-down-outline' },
-            { id: '3', type: 'Recepies', name: 'Visual Design', date: '08 Set 2025',
-                value: 300, iconColor: '#4CAF50', iconName: 'arrow-up-outline' },
-            { id: '4', type: 'Expenses', name: 'Food Shopping', date: '23 Dec 2025',
-                value: -30.45, iconColor: '#F44336', iconName: 'arrow-down-outline' },
-        ]);
+        const [transactions, setTransactions] = useState<Transaction[]>([]);
 
         const addTransaction = (transaction: Omit<Transaction, 'id' |
             'iconColor' | 'iconName'>) => {
                 const newTransaction = {
                     ...transaction,
                     id: Date.now().toString(),
+                    category: transaction.category || 'Other', //Garante sempre que tenha uma categoria
                     iconColor: transaction.type === 'Recepies' ? '#4CAF50' : '#F44336',
                     iconName: transaction.type === 'Recepies'? 'arrow-up-outline'
                     : 'arrow-down-outline',

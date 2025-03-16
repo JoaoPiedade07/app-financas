@@ -126,13 +126,14 @@ const Home = () => {
                                     data={chartData}
                                     x="label"
                                     y="value"
-                                    innerRadius={50}
-                                    padAngle={3}
+                                    innerRadius={65}
+                                    padAngle={2}
                                     labels={() => null}
                                     style={{ labels: { display: "none" } }}
                                     colorScale={chartData.map(item => item.color)}
                                     width={screenWidth * 0.65}
                                     height={260}
+                                    padding={{ left: 0, right: 50 }}
                                 />
                             </View>
                             <View style={styles.legend}>
@@ -223,14 +224,16 @@ const styles = StyleSheet.create({
     container: {
         flexDirection: "row",
         alignItems: "center",
+        justifyContent: "space-between",
     },
     chartContainer: {
         width: "40%",
-        alignItems: "flex-start",
+        alignItems: "center",
+        marginLeft: 0,
     },
     legend: {
         width: "60%",
-        paddingLeft: 10,
+        paddingLeft: 5,
     },
     legendItem: {
         flexDirection: "row",

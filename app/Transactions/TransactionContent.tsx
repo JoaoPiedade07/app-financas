@@ -15,6 +15,7 @@ interface TransactionContextType { //Define the context type
     transactions: Transaction[];
     addTransaction: (transaction: Omit<Transaction, 'id' | 'iconColor'
         | 'iconName'>) => void;
+    deleteTransaction: (id: string | number) => void;
 }
 
 //Create the context
@@ -36,12 +37,22 @@ export const TransactionProvider: React.FC<{children: ReactNode}> = ({
                     : 'arrow-down-outline',
                 };
 
-                setTransactions(prevTransactions => [newTransaction, ...prevTransactions]);
+                // Add the new transaction to the state
+                setTransactions(prevTransactions => [...prevTransactions, newTransaction]);
+            };
+
+            const deleteTransaction = (id: string | number) => {
+                setTransactions(prevTransactions =>
+                    prevTransactions.filter(transaction => 
+                        transaction.id !== id)
+                    );
             };
 
             return (
-                <TransactionContext.Provider value = {{ transactions,
-                    addTransaction }}>
+                <TransactionContext.Provider value = {{ 
+                    transactions,
+                    addTransaction, 
+                    deleteTransaction }}>
                         {children}
                 </TransactionContext.Provider>
             );

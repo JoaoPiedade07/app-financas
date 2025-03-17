@@ -36,11 +36,13 @@ const Finances = () => {
     const [calendarVisible, setCalendarVisible] = useState(false);
     const translateY = useSharedValue(0); // Controla a posição vertical do modal
     const isModalOpen = useSharedValue(true); // Indica se o modal está aberto
-    const { transactions, addTransaction } = useTransactions();
+    const { transactions, addTransaction, deleteTransaction } = useTransactions();
     const [swipedTransactionId, setSwipedTransactionId] = useState<string | null>(null);
     const swipeX = useSharedValue(0);
     const deleteWidth = useSharedValue(0);
     const deleteOpacity = useSharedValue(0);
+    const [transactionToDelete, setTransactionToDelete] = useState<any>(null);
+    const [confirmDeleteVisible, setConfirmDeleteVisible] = useState(false);
 
     const swipeGesture = Gesture.Pan()
         .onUpdate((event) => {
@@ -303,8 +305,9 @@ const Finances = () => {
                                         <TouchableOpacity 
                                             style={{ width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' }}
                                             onPress={() => {
-                                                // Add your delete logic here
-                                                alert(`Delete transaction: ${transaction.name}`);
+                                                // Set the transaction to delete and show confirmation modal
+                                                setTransactionToDelete(transaction);
+                                                setConfirmDeleteVisible(true);
                                             }}
                                         >
                                             <Ionicons name="trash-outline" size={24} color="white" />
@@ -315,6 +318,75 @@ const Finances = () => {
                         ))}
                         </Animated.View>
                     </GestureDetector>
+                </View>
+            </Modal>
+
+            {/* Confirmation Delete Modal */}
+            <Modal
+                visible={confirmDeleteVisible}
+                transparent={true}
+                animationType="fade"
+                onRequestClose={() => setConfirmDeleteVisible(false)}
+            >
+                <View style={styles.confirmModalContainer}>
+                    <View style={styles.confirmModalContent}>
+                        <Text style={styles.confirmModalTitle}>Delete Transaction</Text>
+                        
+                        {transactionToDelete && (
+                            <View style={styles.confirmTransactionDetails}>
+                                <Text style={styles.confirmQuestion}>
+                                    Are you sure you want to delete this transaction?
+                                </Text>
+                                
+                                {transactions.map((transaction) => (
+                                <View key={transaction.id} style={styles.transactionRow}>
+                                    <View style={styles.transactionInfo}>
+                                        <View style={[styles.iconContainerWeak, { backgroundColor: transaction.type === 'Recepies' ? '#4CAF50' : '#F44336' }]}>
+                                            <Ionicons name={transaction.type === 'Recepies' ? "arrow-up-outline" : "arrow-down-outline"} size={18} color="white" />
+                                        </View>
+                                        <View>
+                                            <Text style={styles.transactionName}>{transaction.name}</Text>
+                                            <Text style={styles.transactionDate}>{transaction.date}</Text>
+                                        </View>
+                                    </View>
+                                    <Text style={[styles.transactionValue, transaction.type === 'Recepies' ? styles.positive : styles.negative]}>
+                                        {transaction.value >= 0 ? `+${transaction.value.toFixed(2)}` : `${transaction.value.toFixed(2)}`}
+                                    </Text>
+                    </View>
+                ))}
+                            </View>
+                        )}
+                        
+                        <View style={styles.confirmButtonsContainer}>
+                            <TouchableOpacity 
+                                style={[styles.confirmButton, styles.cancelButton]}
+                                onPress={() => setConfirmDeleteVisible(false)}
+                            >
+                                <Text style={styles.confirmButtonText}>Cancel</Text>
+                            </TouchableOpacity>
+                            
+                            <TouchableOpacity 
+                            style={[styles.confirmButton, styles.deleteConfirmButton]}
+                            onPress={() => {
+                                // Actually delete the transaction
+                                if (transactionToDelete) {
+                                    deleteTransaction(transactionToDelete.id);
+                                    setConfirmDeleteVisible(false);
+                                    setTransactionToDelete(null);
+                                    // Reset the swipe state
+                                    swipeX.value = withTiming(0, { duration: 300 });
+                                    deleteWidth.value = withTiming(0, { duration: 300 });
+                                    deleteOpacity.value = withTiming(0, { duration: 300 });
+                                    setTimeout(() => {
+                                        setSwipedTransactionId(null);
+                                    }, 300);
+                                }
+                            }}
+                        >
+                            <Text style={styles.confirmButtonText}>Delete</Text>
+                        </TouchableOpacity>
+                        </View>
+                    </View>
                 </View>
             </Modal>
 
@@ -841,6 +913,85 @@ const styles = StyleSheet.create({
         right: 0,
         bottom: 0,
         borderRadius: 8,
+    },
+
+    confirmModalContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    },
+    
+    confirmModalContent: {
+        backgroundColor: 'white',
+        borderRadius: 15,
+        padding: 20,
+        width: '80%',
+        elevation: 5,
+    },
+    
+    confirmModalTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        marginBottom: 15,
+        textAlign: 'center',
+        color: '#F44336',
+    },
+    
+    confirmQuestion: {
+        fontSize: 16,
+        marginBottom: 15,
+        textAlign: 'center',
+    },
+    
+    confirmTransactionDetails: {
+        backgroundColor: '#f9f9f9',
+        borderRadius: 8,
+        padding: 15,
+        marginBottom: 20,
+    },
+    
+    transactionDetailItem: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: 8,
+    },
+    
+    detailLabel: {
+        fontSize: 15,
+        fontWeight: 'bold',
+        color: '#555',
+    },
+    
+    detailValue: {
+        fontSize: 15,
+    },
+    
+    confirmButtonsContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+    },
+    
+    confirmButton: {
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        borderRadius: 8,
+        minWidth: 100,
+        alignItems: 'center',
+    },
+    
+    cancelButton: {
+        backgroundColor: '#9e9e9e',
+    },
+    
+    deleteConfirmButton: {
+        backgroundColor: '#F44336',
+    },
+    
+    confirmButtonText: {
+        color: 'white',
+        fontWeight: 'bold',
+        fontSize: 16,
     },
 });
 

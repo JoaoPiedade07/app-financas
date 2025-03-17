@@ -9,6 +9,7 @@ export interface Transaction { //Define the transaction type
     category?: string; 
     iconColor?: string;
     iconName?: string;
+    isUpcomingBill?: boolean; 
 }
 
 interface TransactionContextType { //Define the context type

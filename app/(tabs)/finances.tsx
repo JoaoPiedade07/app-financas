@@ -125,7 +125,9 @@ const Finances = () => {
     });
 
     const getButtonColor = () => {
-        return selectedType === 'Recepies' ? '#4CAF50' : '#F44336'; // Verde para Recepie, Vermelho para Expense
+        if (selectedType === 'Recepies') return '#4CAF50'; // Verde para receitas
+        if (selectedType === 'Expenses') return '#F44336'; // Vermelho para despesas
+        return '#FF9800'; // Laranja para as upcoming bills
     };
 
     const openDropdown = () => {
@@ -167,7 +169,8 @@ const Finances = () => {
             category: selectedType === 'Recepies' ? 'Income' :
             selectedCategory.label,
             iconColor: selectedType === 'Recepies' ? '#4CAF50' : '#F44336',
-            iconName: selectedType === 'Recepies' ? "arrow-up-outline" : "arrow-down-outline"
+            iconName: selectedType === 'Recepies' ? "arrow-up-outline" : "arrow-down-outline",
+            isUpcomingBill: selectedType === 'Upcoming Bills',
         };
     
             addTransaction(newEntry);
@@ -216,30 +219,26 @@ const Finances = () => {
                 height={250}
                 />
                 <Text style={styles.title}>Upcoming Bills</Text>
-                    <FlatList
-                        data={[
-                            { id: '1', date: '22 JUNE 2025', title: 'Crunchyroll', price: '9.55' },
-                            { id: '2', date: '15 MAY 2025', title: 'Spotify', price: '5.99' },
-                            { id: '3', date: '1 DECEMBER 2026', title: 'Amazon', price: '7.99' },
-                        ]}
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        keyExtractor={(item) => item.id}
-                        renderItem={({ item }) => (
-                        <View style={styles.cardContainerSlider}>
-                            <Text style={styles.dateTextSlider}>{item.date}</Text>
-                            <View style={styles.bottomSectionSlider}>
-                                <View>
-                                    <Text style={styles.titleSlider}>{item.title}</Text>
-                                        <Text style={styles.priceSlider}>{item.price}€</Text>
-                                </View>
-                                <TouchableOpacity style={styles.buttonSlider}>
-                                    <Ionicons name="arrow-forward-outline" size={18} color="white" />
-                                </TouchableOpacity>
+                <FlatList
+                    data={transactions.filter(t => t.isUpcomingBill)}
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    keyExtractor={(item) => item.id.toString()}
+                    renderItem={({ item }) => (
+                    <View style={styles.cardContainerSlider}>
+                        <Text style={styles.dateTextSlider}>{item.date}</Text>
+                        <View style={styles.bottomSectionSlider}>
+                            <View>
+                                <Text style={styles.titleSlider}>{item.name}</Text>
+                                <Text style={styles.priceSlider}>{Math.abs(item.value).toFixed(2)}€</Text>
                             </View>
+                            <TouchableOpacity style={styles.buttonSlider}>
+                                <Ionicons name="arrow-forward-outline" size={18} color="white" />
+                            </TouchableOpacity>
                         </View>
-                        )}
-                    />
+                    </View>
+                    )}
+                />
                 <TouchableOpacity onPress={() => {setModalVisibleDelete(true); 
                 translateY.value = withTiming(0, { duration: 300 });
                 isModalOpen.value = true;}} >
@@ -333,29 +332,27 @@ const Finances = () => {
                         <Text style={styles.confirmModalTitle}>Delete Transaction</Text>
                         
                         {transactionToDelete && (
-                            <View style={styles.confirmTransactionDetails}>
-                                <Text style={styles.confirmQuestion}>
-                                    Are you sure you want to delete this transaction?
-                                </Text>
-                                
-                                {transactions.map((transaction) => (
-                                <View key={transaction.id} style={styles.transactionRow}>
-                                    <View style={styles.transactionInfo}>
-                                        <View style={[styles.iconContainerWeak, { backgroundColor: transaction.type === 'Recepies' ? '#4CAF50' : '#F44336' }]}>
-                                            <Ionicons name={transaction.type === 'Recepies' ? "arrow-up-outline" : "arrow-down-outline"} size={18} color="white" />
-                                        </View>
-                                        <View>
-                                            <Text style={styles.transactionName}>{transaction.name}</Text>
-                                            <Text style={styles.transactionDate}>{transaction.date}</Text>
-                                        </View>
+                        <View style={styles.confirmTransactionDetails}>
+                            <Text style={styles.confirmQuestion}>
+                                Are you sure you want to delete this transaction?
+                            </Text>
+                            
+                            <View key={transactionToDelete.id} style={styles.transactionRow}>
+                                <View style={styles.transactionInfo}>
+                                    <View style={[styles.iconContainerWeak, { backgroundColor: transactionToDelete.type === 'Recepies' ? '#4CAF50' : '#F44336' }]}>
+                                        <Ionicons name={transactionToDelete.type === 'Recepies' ? "arrow-up-outline" : "arrow-down-outline"} size={18} color="white" />
                                     </View>
-                                    <Text style={[styles.transactionValue, transaction.type === 'Recepies' ? styles.positive : styles.negative]}>
-                                        {transaction.value >= 0 ? `+${transaction.value.toFixed(2)}` : `${transaction.value.toFixed(2)}`}
-                                    </Text>
-                    </View>
-                ))}
+                                    <View>
+                                        <Text style={styles.transactionName}>{transactionToDelete.name}</Text>
+                                        <Text style={styles.transactionDate}>{transactionToDelete.date}</Text>
+                                    </View>
+                                </View>
+                                <Text style={[styles.transactionValue, transactionToDelete.type === 'Recepies' ? styles.positive : styles.negative]}>
+                                    {transactionToDelete.value >= 0 ? `+${transactionToDelete.value.toFixed(2)}` : `${transactionToDelete.value.toFixed(2)}`}
+                                </Text>
                             </View>
-                        )}
+                        </View>
+                    )}
                         
                         <View style={styles.confirmButtonsContainer}>
                             <TouchableOpacity 
@@ -408,7 +405,7 @@ const Finances = () => {
                              <Text style={styles.modalTitle}>New Transaction</Text>
                                 {/* Switcher */}
                             <View style={styles.switcherContainer}>
-                                {['Recepies', 'Expenses'].map((type) => (
+                                {['Recepies', 'Expenses', 'Upcoming Bills'].map((type) => (
                                     <TouchableOpacity
                                         key={type}
                                         style={[
@@ -540,7 +537,7 @@ const Finances = () => {
                                 onPress={handleAddTransaction}
                             >
                                 <Text style={styles.addCancelButtonText}>
-                                    {selectedType === 'Recepies' ? '+ Add Recepie' : '+ Add Expense'}
+                                    {selectedType === 'Recepies' ? '+ Add Recepie' : selectedType === 'Expenses' ? '+ Add Expense' : '+ Upcoming Bill'}
                                 </Text>
                             </TouchableOpacity>
                         </Animated.View>
@@ -736,7 +733,7 @@ const styles = StyleSheet.create({
     },   
 
     switcherText: {
-        fontSize: 16,
+        fontSize: 15,
         color: "#333",
     },
 

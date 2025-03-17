@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Modal, TextInput, Button, Dimensions, FlatList } from 'react-native';
 import { Calendar, DateData } from 'react-native-calendars';
@@ -25,6 +25,7 @@ const Finances = () => {
     const [selectedCategory, setSelectedCategory] = useState(categories[0]);
     const [modalVisible, setModalVisible] = useState(false);
     const [modalVisibleCategories, setModalVisibleCategories] = useState(false);
+    const [modalVisibleDelete, setModalVisibleDelete] = useState(false);
     const dropdownRef = useRef<View>(null); // Definir um ref corretamente tipado
     const [dropdownPosition, setDropdownPosition] = useState({ x: 0, y: 0, width: 0 });
     const screenWidth = Dimensions.get('window').width;
@@ -36,6 +37,90 @@ const Finances = () => {
     const translateY = useSharedValue(0); // Controla a posição vertical do modal
     const isModalOpen = useSharedValue(true); // Indica se o modal está aberto
     const { transactions, addTransaction } = useTransactions();
+    const [swipedTransactionId, setSwipedTransactionId] = useState<string | null>(null);
+    const swipeX = useSharedValue(0);
+    const deleteWidth = useSharedValue(0);
+    const deleteOpacity = useSharedValue(0);
+
+    const swipeGesture = Gesture.Pan()
+        .onUpdate((event) => {
+            // Only allow left swipe (negative values)
+            if (event.translationX < 0) {
+                swipeX.value = event.translationX;
+            }
+        })
+        .onEnd((event) => {
+            // If swiped more than 80px to the left, keep it open
+            // Otherwise, snap back to original position
+            if (event.translationX < -80) {
+                swipeX.value = withTiming(-80);
+            } else {
+                swipeX.value = withTiming(0);
+                setSwipedTransactionId(null);
+            }
+        });
+    
+        const rowAnimatedStyle = useAnimatedStyle(() => {
+            return {
+                transform: [{ translateX: swipeX.value }]
+            };
+        });
+            
+        // Function to handle starting a swipe on a transaction
+        const handleSwipeStart = useCallback((transactionId: string) => {
+            setSwipedTransactionId(transactionId);
+            swipeX.value = 0; // Reset the swipe position
+        }, []);
+
+        // Create a separate gesture for each transaction
+        const createSwipeGesture = useCallback((transactionId: string) => {
+            return Gesture.Pan()
+                .onBegin(() => {
+                    handleSwipeStart(transactionId);
+                    deleteOpacity.value = 0;
+                    deleteWidth.value = 0;
+                })
+                .onUpdate((event) => {
+                    if (event.translationX < 0) {
+                        swipeX.value = Math.max(-80, event.translationX);
+                        deleteWidth.value = Math.min(80, Math.abs(event.translationX));
+                        deleteOpacity.value = Math.min(1, Math.abs(event.translationX) / 80);
+                    }
+                })
+                .onEnd((event) => {
+                    if (event.translationX < -40) { // Reduced threshold for better UX
+                        swipeX.value = withTiming(-80, { duration: 300 });
+                        deleteWidth.value = withTiming(80, { duration: 300 });
+                        deleteOpacity.value = withTiming(1, { duration: 300 });
+                    } else {
+                        swipeX.value = withTiming(0, { duration: 300 });
+                        deleteWidth.value = withTiming(0, { duration: 300 });
+                        deleteOpacity.value = withTiming(0, { duration: 300 });
+                        setTimeout(() => {
+                            setSwipedTransactionId(null);
+                        }, 300);
+                    }
+                });
+        }, [handleSwipeStart]);
+
+        const deleteButtonStyle = useAnimatedStyle(() => {
+            return {
+                width: deleteWidth.value,
+                opacity: deleteOpacity.value,
+                transform: [
+                    { translateX: (80 - deleteWidth.value) }, // Slide in from right
+                    { scale: 0.9 + (deleteOpacity.value * 0.1) } // Subtle scale effect
+                ]
+            };
+        });
+
+    // Add this to your existing animated styles
+    const swipeContainerStyle = useAnimatedStyle(() => {
+        return {
+            backgroundColor: swipedTransactionId ? 
+                `rgba(244, 67, 54, ${deleteOpacity.value})` : 'transparent'
+        };
+    });
 
     const getButtonColor = () => {
         return selectedType === 'Recepies' ? '#4CAF50' : '#F44336'; // Verde para Recepie, Vermelho para Expense
@@ -103,7 +188,10 @@ const Finances = () => {
                 // Fecha o modal se o usuário arrastar mais de 30% da tela
                 translateY.value = withTiming(screenHeight, { duration: 300 });
                 isModalOpen.value = false;
-                setTimeout(() => setModalVisible(false), 300); // Fecha o modal após a animação
+                setTimeout(() =>  {
+                    if (modalVisible) setModalVisible(false);
+                    if (modalVisibleDelete) setModalVisibleDelete(false);
+                }, 300); // Fecha o modal após a animação
             } else {
                 // Volta ao topo se o usuário não arrastar o suficiente
                 translateY.value = withTiming(0, { duration: 300 });
@@ -115,7 +203,7 @@ const Finances = () => {
                 transform: [{ translateY: translateY.value }],
             };
         });
-    
+
         return (
             <View style={styles.screen}>
                 <ScrollView contentContainerStyle={styles.scrollContainer}>
@@ -150,6 +238,9 @@ const Finances = () => {
                         </View>
                         )}
                     />
+                <TouchableOpacity onPress={() => {setModalVisibleDelete(true); 
+                translateY.value = withTiming(0, { duration: 300 });
+                isModalOpen.value = true;}} >
                 <Text style={styles.title}>Transactions</Text>
                 {transactions.map((transaction) => (
                     <View key={transaction.id} style={styles.transactionRow}>
@@ -167,26 +258,66 @@ const Finances = () => {
                         </Text>
                     </View>
                 ))}
+                </TouchableOpacity>
             </ScrollView>
 
             {/* Modal para eliminar transação */}
 
-            <Modal visible={modalVisible} animationType='none' transparent={true}>
-                <View style = {styles.modalContainer}>
+            <Modal visible={modalVisibleDelete} animationType='none' transparent={true}>
+                <View style={styles.modalContainer}>
                     <GestureDetector gesture={gesture}>
-                        <Animated.View style = {[styles.modalContent, animatedStyle]}>
-                            <View style = {styles.dragIndicator}/>
+                        <Animated.View style={[styles.modalContent, animatedStyle]}>
+                            <View style={styles.dragIndicator}/>
 
                             <Text style={styles.modalTitle}>Delete Transaction</Text>
-                            
+                            {transactions.map((transaction) => (
+                            <View key={transaction.id} style={styles.swipeContainer}>
+                                <Animated.View style={[styles.swipeContainerBackground, swipeContainerStyle]} />
+                                <GestureDetector 
+                                    gesture={createSwipeGesture(transaction.id.toString())}
+                                >
+                                    <Animated.View 
+                                        style={[
+                                            styles.transactionRow, 
+                                            swipedTransactionId === transaction.id ? rowAnimatedStyle : null,
+                                            { width: '100%', backgroundColor: 'white', borderRadius: 8 }
+                                        ]}
+                                    >
+                                
+                                    <View style={styles.transactionInfo}>
+                                        <View style={[styles.iconContainerWeak, { backgroundColor: transaction.type === 'Recepies' ? '#4CAF50' : '#F44336' }]}>
+                                            <Ionicons name={transaction.type === 'Recepies' ? "arrow-up-outline" : "arrow-down-outline"} size={18} color="white" />
+                                        </View>
+                                        <View>
+                                            <Text style={styles.transactionName}>{transaction.name}</Text>
+                                            <Text style={styles.transactionDate}>{transaction.date}</Text>
+                                        </View>
+                                    </View>
+                                    <Text style={[styles.transactionValue, transaction.type === 'Recepies' ? styles.positive : styles.negative]}>
+                                        {transaction.value >= 0 ? `+${transaction.value.toFixed(2)}` : `${transaction.value.toFixed(2)}`}
+                                    </Text>
+                                    </Animated.View>
+                                    </GestureDetector>
+                                    {swipedTransactionId === transaction.id && (
+                                    <Animated.View style={[styles.deleteButton, deleteButtonStyle]}>
+                                        <TouchableOpacity 
+                                            style={{ width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' }}
+                                            onPress={() => {
+                                                // Add your delete logic here
+                                                alert(`Delete transaction: ${transaction.name}`);
+                                            }}
+                                        >
+                                            <Ionicons name="trash-outline" size={24} color="white" />
+                                        </TouchableOpacity>
+                                    </Animated.View>
+                                    )}
+                        </View>
+                        ))}
                         </Animated.View>
                     </GestureDetector>
                 </View>
             </Modal>
 
-            {/* Botão flutuante para adicionar nova despesa */}
-
-    
             {/* Modal para adicionar transação */}
             <TouchableOpacity style={styles.createButton} onPress={() => {setModalVisible(true); 
                 translateY.value = withTiming(0, { duration: 300 });
@@ -355,7 +486,6 @@ const styles = StyleSheet.create({
 
     scrollContainer: {
         paddingBottom: 140,
-        
     },
 
     title: {
@@ -499,6 +629,7 @@ const styles = StyleSheet.create({
         fontSize: 18, // Tamanho de fonte adequado
         fontWeight: 'bold', // Texto em negrito para melhor legibilidade
     },
+
     input: {
         borderWidth: 1,
         borderColor: '#ccc',
@@ -506,6 +637,7 @@ const styles = StyleSheet.create({
         padding: 10,
         marginBottom: 10,
     },
+
     switcherContainer: {
         flexDirection: "row",
         justifyContent: "space-between",
@@ -514,12 +646,14 @@ const styles = StyleSheet.create({
         marginVertical: 10,
         padding: 5,
     },
+
     switcherButton: {
         flex: 1,
         paddingVertical: 10,
         alignItems: "center",
         borderRadius: 8,
     },
+
     switcherButtonActive: {
         backgroundColor: "#fff",
         shadowColor: "#000",
@@ -527,15 +661,18 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.2,
         shadowRadius: 4,
         elevation: 4, // Para Android
-    },    
+    },   
+
     switcherText: {
         fontSize: 16,
         color: "#333",
     },
+
     switcherTextActive: {
         color: "#333",
         fontWeight: "bold",
     }, 
+
     dateButton: { 
         padding: 10,
         alignItems: 'center',
@@ -543,11 +680,13 @@ const styles = StyleSheet.create({
         borderRadius: 5,
         marginBottom: 10 
     },
+
     dateButtonText: {
         color: '#fff',
         fontSize: 18,
         textAlign: 'center',
     },
+    
     modalView: { 
         backgroundColor: 'white',
         padding: 20,
@@ -555,17 +694,20 @@ const styles = StyleSheet.create({
         borderColor: '#333',
         elevation: 5 
     },
+
     calendarContainer: { 
         padding: 10, 
         backgroundColor: 'white',
         elevation: 3, 
     },
+
     centerView: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
         marginTop: 22,
     },
+
     button: {
         marginTop: 10,
         height: 40,
@@ -575,22 +717,26 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
       },
+
       colorBox: {
         width: 10,
         height: 10,
         borderRadius: 10,
         marginRight: 8,
     },
+
     categoryItem: {
         flexDirection: 'row',
         alignItems: 'center',
         padding: 10,
         width: '100%',
     },
+
     overlay: {
         flex: 1,
         backgroundColor: 'rgba(0,0,0,0.1)', // Leve escurecimento para destacar a dropdown
     },
+
     dropdownModal: {
         position: 'absolute',
         backgroundColor: 'white',
@@ -603,7 +749,8 @@ const styles = StyleSheet.create({
         shadowRadius: 4,
         minWidth: 120, // 🔹 Define um tamanho mínimo
         maxWidth: 200, // 🔹 Define um tamanho máximo para não esticar demais
-    }, 
+    },
+
     slidingCard: {
         width: 200,
         marginRight: 10,
@@ -612,6 +759,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'white',
         padding: 15,
     },
+
     cardContainerSlider: {
         width: 180,
         height: 150,
@@ -629,11 +777,13 @@ const styles = StyleSheet.create({
         marginTop: 10,
         marginBottom: 10,
     },
+
     dateTextSlider: {
         fontSize: 12,
         color: '#333', 
         textAlign: 'center',
     },
+
     bottomSectionSlider: {
         backgroundColor: '#fff', // Roxo médio
         borderRadius: 15,
@@ -642,15 +792,18 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: 10,
     },
+
     titleSlider: {
         fontSize: 14,
         color: 'black',
     },
+
     priceSlider: {
         fontSize: 17,
         fontWeight: 'bold',
         color: '#3357FF',
     },
+
     buttonSlider: {
         width: 35,
         height: 35,
@@ -658,6 +811,36 @@ const styles = StyleSheet.create({
         borderRadius: 30,
         justifyContent: 'center',
         alignItems: 'center',
+    },
+
+    swipeContainer: {
+        position: 'relative',
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderRadius: 8,
+        marginVertical: 4,
+        overflow: 'hidden',
+    },
+    
+    deleteButton: {
+        position: 'absolute',
+        right: 0,
+        height: '100%',
+        backgroundColor: '#F44336',
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderTopRightRadius: 8,
+        borderBottomRightRadius: 8,
+        overflow: 'hidden',
+    },
+
+    swipeContainerBackground: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        borderRadius: 8,
     },
 });
 

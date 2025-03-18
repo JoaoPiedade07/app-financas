@@ -1,10 +1,60 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Image, Modal, Dimensions, FlatList } from 'react-native';
 import { Card } from "react-native-paper";
 import { Ionicons } from '@expo/vector-icons';
 import { Link } from 'expo-router';
  
 const Profile = () => {
+
+    const languages = {
+        en: {
+            name: "Name",
+            category: "Category",
+            settings: "Settings",
+            language: "Language",
+        },
+        pt: {
+            name: "Nome",
+            category: "Categoria",
+            settings: "Configurações",
+            language: "Idioma",
+        },
+        es: {
+            name: "Nombre",
+            category: "Categoría",
+            settings: "Ajustes",
+            language: "Idioma",
+        }
+    };
+
+    // Current language state (default to English)
+    const [currentLang, setCurrentLang] = useState('en');
+
+    // State for dropdown visibility 
+    const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
+
+    // Get text based on current language
+    const getText = (key: keyof typeof languages[keyof typeof languages]) => {
+        return languages[currentLang as keyof typeof languages][key];
+    };
+
+    // Language options with display names
+    const languageOptions = [
+        { code: 'en', name: 'English' },
+        { code: 'pt', name: 'Português' },
+        { code: 'es', name: 'Español' },
+    ];
+
+    // Toggle language dropdown
+    const toggleLanguageDropdown = () => {
+        setShowLanguageDropdown(!showLanguageDropdown);
+    };
+
+    // Change language
+    const changeLanguage = (langCode: string) => {
+        setCurrentLang(langCode);
+        setShowLanguageDropdown(false);
+    }
 
     return (
         <View>
@@ -17,9 +67,49 @@ const Profile = () => {
                 style={styles.profileIcon} 
             />
             </TouchableOpacity>
-            <Text>Name</Text>
+            <Text>{getText('name')}</Text>
 
-            <Text style={styles.title}>Category</Text>
+            {/* Language Selector */}
+            <View style = {styles.languageSelector}>
+                <Text style = {styles.title}>{getText ('language')}</Text>
+                <TouchableOpacity 
+                    style = {styles.languageButton}
+                    onPress={toggleLanguageDropdown} >
+                    <Text>
+                        {languageOptions.find(lang => lang.code === currentLang)?.name} 
+                    </Text>
+                    <Ionicons name = "chevron-down-outline" size={16} color="#666" />
+                </TouchableOpacity>
+
+                {/* Language Dropdown Modal */}
+
+                <Modal
+                    visible = {showLanguageDropdown}
+                    transparent = {true}
+                    animationType='fade'
+                    onRequestClose={() => setShowLanguageDropdown(false)}>
+                        <TouchableOpacity style = {styles.overlay}
+                        activeOpacity = {1}
+                        onPress = {() => setShowLanguageDropdown(false)}>
+                            <View style = {styles.dropdownContainer}>
+                                {languageOptions.map((lang) => (
+                                    <TouchableOpacity
+                                        key={lang.code}
+                                        style = {[styles.languageOption,
+                                        lang.code === currentLang && styles.selectedLanguage]}
+                                        onPress={() => changeLanguage(lang.code)}>
+                                        <Text style={styles.selectedLanguageText}>
+                                            {lang.name}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+
+                            </View>
+                        </TouchableOpacity>
+                    </Modal>
+            </View>
+
+            <Text style={styles.title}>{getText ('category')}</Text>
             <Card style={styles.card}>
                 <Link href = { '/(profile)/categorias' }>
                     <Card.Content>
@@ -28,7 +118,7 @@ const Profile = () => {
                                 <View style={[styles.iconContainerWeak, { backgroundColor: '#4CAF50' }]}>
                                     <Ionicons name="pricetag-outline" size={18} color="white" />
                                 </View>
-                                <Text style={styles.transactionName}>Category</Text>
+                                <Text style={styles.transactionName}>{getText ('category')}</Text>
                             </View>
                         </View>
                     </Card.Content>
@@ -40,25 +130,70 @@ const Profile = () => {
 }; 
 
 const styles = StyleSheet.create ({
+    container: {
+        flex: 1,
+        padding: 10,
+    },
     profileIconContainer: {
-        //position: 'absolute',
         alignItems: 'center',
         justifyContent: 'center',
         marginTop: 15,  
-      },
+    },
     profileIcon: {
         width: 120,
         height: 120,
         borderRadius: 100,
         borderWidth: 2,
         borderColor: '#fff',
-      },
+    },
     settingsIcon: {
         position: 'absolute',
         top: 20,
         right: 20,
-        zIndex: 10, // Garante que o ícone fique acima de outros elementos
+        zIndex: 10,
     },
+    // Language selector styles
+    languageSelector: {
+        marginTop: 20,
+        marginBottom: 10,
+    },
+    languageButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: 10,
+        backgroundColor: '#f0f0f0',
+        borderRadius: 8,
+        marginHorizontal: 10,
+        marginTop: 5,
+    },
+    dropdownContainer: {
+        position: 'absolute',
+        top: '30%',
+        left: '10%',
+        right: '10%',
+        backgroundColor: 'white',
+        borderRadius: 8,
+        padding: 10,
+        elevation: 5,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+    },
+    languageOption: {
+        padding: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: '#f0f0f0',
+    },
+    selectedLanguage: {
+        backgroundColor: '#e6f7ff',
+    },
+    selectedLanguageText: {
+        fontWeight: 'bold',
+        color: '#0066cc',
+    },
+    // Existing styles
     card: {
         margin: 10,
         borderRadius: 10,
@@ -78,12 +213,12 @@ const styles = StyleSheet.create ({
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 5,
-        marginLeft: 0, // Espaço entre o ícone e o texto
+        marginLeft: 0,
     },
     transactionName: {
         fontSize: 16,
         color: '#333',
-        marginBottom: 4, // Espaçamento entre nome e data
+        marginBottom: 4,
         marginLeft: 5,
     },
     transactionRow: {
@@ -93,12 +228,11 @@ const styles = StyleSheet.create ({
         paddingVertical: 10,
     },
     transactionInfo: {
-        flexDirection: 'row', // Para alinhar ícone e texto lado a lado
-        alignItems: 'center', // Centraliza verticalmente
+        flexDirection: 'row',
+        alignItems: 'center',
     },
     transactionValue: {
         fontSize: 16,
-        //fontWeight: 'bold',
         marginRight: 20,
     },
     colorBox: {
@@ -115,7 +249,9 @@ const styles = StyleSheet.create ({
     },
     overlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.1)', // Leve escurecimento para destacar a dropdown
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     dropdownModal: {
         position: 'absolute',
@@ -127,8 +263,8 @@ const styles = StyleSheet.create ({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.3,
         shadowRadius: 4,
-        minWidth: 120, // 🔹 Define um tamanho mínimo
-        maxWidth: 200, // 🔹 Define um tamanho máximo para não esticar demais
+        minWidth: 120,
+        maxWidth: 200,
     },   
 });
 

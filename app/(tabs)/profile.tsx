@@ -3,46 +3,26 @@ import { StyleSheet, Text, View, TouchableOpacity, Image, Modal, Dimensions, Fla
 import { Card } from "react-native-paper";
 import { Ionicons } from '@expo/vector-icons';
 import { Link } from 'expo-router';
+import { useLanguage } from '../Languages/LanguageContente';
  
 const Profile = () => {
 
-    const languages = {
-        en: {
-            name: "Name",
-            category: "Category",
-            settings: "Settings",
-            language: "Language",
-        },
-        pt: {
-            name: "Nome",
-            category: "Categoria",
-            settings: "Configurações",
-            language: "Idioma",
-        },
-        es: {
-            name: "Nombre",
-            category: "Categoría",
-            settings: "Ajustes",
-            language: "Idioma",
-        }
-    };
-
+    
     // Current language state (default to English)
-    const [currentLang, setCurrentLang] = useState('en');
+    const {currentLanguage, setCurrentLanguage, getText} = useLanguage();
 
     // State for dropdown visibility 
     const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
-
-    // Get text based on current language
-    const getText = (key: keyof typeof languages[keyof typeof languages]) => {
-        return languages[currentLang as keyof typeof languages][key];
-    };
 
     // Language options with display names
     const languageOptions = [
         { code: 'en', name: 'English' },
         { code: 'pt', name: 'Português' },
         { code: 'es', name: 'Español' },
+        { code: 'de', name: 'Deutsch' },
+        { code: 'ja', name: '日本語' },
+        { code: 'zh', name: '中文' },
+        
     ];
 
     // Toggle language dropdown
@@ -52,7 +32,7 @@ const Profile = () => {
 
     // Change language
     const changeLanguage = (langCode: string) => {
-        setCurrentLang(langCode);
+        setCurrentLanguage(langCode);
         setShowLanguageDropdown(false);
     }
 
@@ -76,7 +56,7 @@ const Profile = () => {
                     style = {styles.languageButton}
                     onPress={toggleLanguageDropdown} >
                     <Text>
-                        {languageOptions.find(lang => lang.code === currentLang)?.name} 
+                        {languageOptions.find(lang => lang.code === currentLanguage)?.name} 
                     </Text>
                     <Ionicons name = "chevron-down-outline" size={16} color="#666" />
                 </TouchableOpacity>
@@ -96,7 +76,7 @@ const Profile = () => {
                                     <TouchableOpacity
                                         key={lang.code}
                                         style = {[styles.languageOption,
-                                        lang.code === currentLang && styles.selectedLanguage]}
+                                        lang.code === currentLanguage && styles.selectedLanguage]}
                                         onPress={() => changeLanguage(lang.code)}>
                                         <Text style={styles.selectedLanguageText}>
                                             {lang.name}

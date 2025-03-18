@@ -6,6 +6,7 @@ import { BarChart } from '@mui/x-charts/BarChart';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useTransactions } from '../Transactions/TransactionContent';
+import { useLanguage } from '../Languages/LanguageContente';
 
 const categories = [
     { label: "Home", color: "#FF5733" }, //Color - Red
@@ -21,6 +22,7 @@ const data = [
 
 const Finances = () => {
 
+    const { getText } = useLanguage();
     const [open, setOpen] = useState(false); 
     const [selectedCategory, setSelectedCategory] = useState(categories[0]);
     const [modalVisible, setModalVisible] = useState(false);
@@ -218,7 +220,7 @@ const Finances = () => {
                 width={400}
                 height={250}
                 />
-                <Text style={styles.title}>Upcoming Bills</Text>
+                <Text style={styles.title}>{getText ('upcomingBills')}</Text>
                 <FlatList
                     data={transactions.filter(t => t.isUpcomingBill)}
                     horizontal
@@ -270,7 +272,7 @@ const Finances = () => {
                         <Animated.View style={[styles.modalContent, animatedStyle]}>
                             <View style={styles.dragIndicator}/>
 
-                            <Text style={styles.modalTitle}>Delete Transaction</Text>
+                            <Text style={styles.modalTitle}>{getText ('deleteTransaction')}</Text>
                             {transactions.map((transaction) => (
                             <View key={transaction.id} style={styles.swipeContainer}>
                                 <Animated.View style={[styles.swipeContainerBackground, swipeContainerStyle]} />
@@ -329,12 +331,12 @@ const Finances = () => {
             >
                 <View style={styles.confirmModalContainer}>
                     <View style={styles.confirmModalContent}>
-                        <Text style={styles.confirmModalTitle}>Delete Transaction</Text>
+                        <Text style={styles.confirmModalTitle}>{getText ('deleteTransaction')}</Text>
                         
                         {transactionToDelete && (
                         <View style={styles.confirmTransactionDetails}>
                             <Text style={styles.confirmQuestion}>
-                                Are you sure you want to delete this transaction?
+                                {getText ('deleteConfirmation')}
                             </Text>
                             
                             <View key={transactionToDelete.id} style={styles.transactionRow}>
@@ -359,7 +361,7 @@ const Finances = () => {
                                 style={[styles.confirmButton, styles.cancelButton]}
                                 onPress={() => setConfirmDeleteVisible(false)}
                             >
-                                <Text style={styles.confirmButtonText}>Cancel</Text>
+                                <Text style={styles.confirmButtonText}>{getText ('cancel')}</Text>
                             </TouchableOpacity>
                             
                             <TouchableOpacity 
@@ -380,7 +382,7 @@ const Finances = () => {
                                 }
                             }}
                         >
-                            <Text style={styles.confirmButtonText}>Delete</Text>
+                            <Text style={styles.confirmButtonText}>{getText ('delete')}</Text>
                         </TouchableOpacity>
                         </View>
                     </View>
@@ -402,7 +404,7 @@ const Finances = () => {
                             {/* Tracinho no topo */}
                             <View style={styles.dragIndicator} />
                              {/* Título */}
-                             <Text style={styles.modalTitle}>New Transaction</Text>
+                             <Text style={styles.modalTitle}>{getText ('newTransaction')}</Text>
                                 {/* Switcher */}
                             <View style={styles.switcherContainer}>
                                 {['Recepies', 'Expenses', 'Upcoming Bills'].map((type) => (
@@ -448,7 +450,7 @@ const Finances = () => {
                                         <View style={[styles.iconContainerWeak, { backgroundColor: '#4CAF50' }]}>
                                             <Ionicons name="pricetag-outline" size={18} color="white" />
                                         </View>
-                                        <Text style={styles.transactionName}>Category</Text>
+                                        <Text style={styles.transactionName}>{getText ('category')}</Text>
                                     </View>
                                     <TouchableOpacity ref={dropdownRef} onPress={openDropdown}>
                                         <View style={styles.transactionInfo}>
@@ -498,7 +500,7 @@ const Finances = () => {
                                     <View style={[styles.iconContainerWeak, { backgroundColor: '#3357FF' }]}>
                                         <Ionicons name="calendar-outline" size={18} color="white" />
                                     </View>
-                                    <Text style={styles.transactionName}>Date</Text>
+                                    <Text style={styles.transactionName}>{getText ('date')}</Text>
                                 </View>
                                 <TouchableOpacity style={styles.dateButton} onPress={() => setCalendarVisible(!calendarVisible)}>
                                     <Text style={styles.transactionText}>
@@ -522,7 +524,7 @@ const Finances = () => {
                                             />
                                         </View>
                                         <TouchableOpacity style={styles.button} onPress={() => setCalendarVisible(false)}>
-                                            <Text style={styles.dateButtonText}>Fechar Calendário</Text>
+                                            <Text style={styles.dateButtonText}>{getText ('closeCalendar')}</Text>
                                         </TouchableOpacity>
                                     </View>
                                 </View>

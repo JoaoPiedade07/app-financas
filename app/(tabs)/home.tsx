@@ -5,11 +5,13 @@ import { Card } from "react-native-paper";
 import { Ionicons } from '@expo/vector-icons';
 import { transformSync } from '@babel/core';
 import { useTransactions } from '../Transactions/TransactionContent';
+import { useLanguage } from '../Languages/LanguageContente';
 
 const screenWidth = Dimensions.get("window").width;
 
 const Home = () => {
 
+    const { getText } = useLanguage();
     const { transactions } = useTransactions();
 
     const totalIncome = transactions.filter(t => t.type === 'Recepies').reduce((sum, t) => sum + Math.abs(t.value), 0);
@@ -70,7 +72,7 @@ const Home = () => {
         <View style={styles.screen}>
             <ScrollView contentContainerStyle={styles.scrollContainer}>
                 <Text style = {{ fontSize: 26, marginLeft: 20, marginTop: 20, }}>{totalBalance.toFixed(2)}€</Text>
-                <Text style = {{ fontSize: 18, marginLeft: 20, marginBottom: 15, color: '#333' }}>Earnings</Text>
+                <Text style = {{ fontSize: 18, marginLeft: 20, marginBottom: 15, color: '#333' }}>{getText ('earnings')}</Text>
                 <TouchableOpacity style={styles.profileIconContainer}>
                     <Image 
                     source={require('@/assets/images/logo.png')} 
@@ -92,7 +94,7 @@ const Home = () => {
                                     />
                                 </View>
                                 <View style={styles.infoTextColumn}>
-                                    <Text style={styles.infoText}>Recepies</Text>
+                                    <Text style={styles.infoText}>{getText ('recepies')}</Text>
                                     <Text style={[ styles.infoValue, styles.positive ]}>{totalIncome.toFixed(2)}€</Text>
                                 </View>
                                 </View>
@@ -109,7 +111,7 @@ const Home = () => {
                                     />
                                 </View>
                                 <View style={styles.infoTextColumn}>
-                                    <Text style={styles.infoText}>Expenses</Text>
+                                    <Text style={styles.infoText}>{getText ('expenses')}</Text>
                                     <Text style={[ styles.infoValue, styles.negative ]}>{totalExpense.toFixed(2)}€</Text>
                                 </View>
                                 </View>
@@ -117,7 +119,7 @@ const Home = () => {
                             </View>
                     </Card.Content>
                 </Card>
-                <Text style={styles.title}>Expenses by category</Text>
+                <Text style={styles.title}>{getText ('expensesByCategory')}</Text>
                 <Card style={styles.card}>
                     <Card.Content>
                         <View style={styles.container}>
@@ -148,7 +150,7 @@ const Home = () => {
                         </View>
                     </Card.Content>
                 </Card>
-                <Text style={styles.title}>Upcoming Bills</Text>
+                <Text style={styles.title}>{getText ('upcomingBills')}</Text>
                 <FlatList
                     data={[
                         { id: '1', date: '22 JUNE 2025', title: 'Crunchyroll', price: '9.50' },
@@ -173,7 +175,7 @@ const Home = () => {
                         </View>
                     )}
                 />
-                <Text style={styles.title}>Weak Transactions</Text>
+                <Text style={styles.title}>{getText ('weekTransactions')}</Text>
                 { formattedTransactions.map((transaction) => (
                     <View key={transaction.id} style = {styles.transactionRow}>
                         <View style = {styles.transactionInfo}>

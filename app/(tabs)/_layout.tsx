@@ -1,5 +1,5 @@
 import React from 'react';
-import { Tabs } from 'expo-router';
+import { Tabs, Stack } from 'expo-router';
 import { TabBar } from '@/components/TabBar';
 import { Ionicons } from '@expo/vector-icons';
 import TransactionProvider from '../Transactions/TransactionContent';

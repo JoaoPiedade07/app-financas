@@ -42,7 +42,37 @@ const Budget = () => {
             categoryColor: "#FFC107",
             deadline: "2026-12-23",
             currency: "€"
-        }
+        },
+        {
+            id: '3',
+            name: "House",
+            total: 340000,
+            spent: 100000,
+            category: "Home",
+            categoryColor: "#FFC107",
+            deadline: "2026-12-23",
+            currency: "€"
+        },
+        {
+            id: '4',
+            name: "House",
+            total: 340000,
+            spent: 100000,
+            category: "Home",
+            categoryColor: "#FFC107",
+            deadline: "2026-12-23",
+            currency: "€"
+        },
+        {
+            id: '5',
+            name: "House",
+            total: 340000,
+            spent: 100000,
+            category: "Home",
+            categoryColor: "#FFC107",
+            deadline: "2026-12-23",
+            currency: "€"
+        },
     ];
 
     // Filter budgets based on selected category
@@ -76,58 +106,51 @@ const Budget = () => {
         // Calculate percentage spent
         const percentageSpent = (item.spent / item.total) * 100;
         const remaining = item.total - item.spent;
-
+    
         return (
-            <View style = {styles.screen}>
-                <ScrollView contentContainerStyle = {styles.scrollContainer}>
-                    <Card style={styles.card}>
-                                        <Card.Content>
-                            <View style={styles.headerRow}>
-                                <Text style={styles.budgetName}>{item.name}</Text>
-                            </View>
-                            
-                            {/* Budget amount */}
-                            <View style={styles.amountContainer}>
-                                <Text style={styles.budgetTotal}>{item.total}{item.currency}</Text>
-                            </View>
-                            
-                            {/* Category and percentage row */}
-                            <View style={styles.categoryPercentRow}>
-                                <View style={styles.categoryContainer}>
-                                    <View style={[styles.categoryDot, { backgroundColor: item.categoryColor }]} />
-                                    <Text style={styles.categoryText}>{item.category}</Text>
-                                </View>
-                                <Text style={styles.percentageText}>{percentageSpent.toFixed(1)}%</Text>
-                            </View>
-                            
-                            {/* Progress Bar */}
-                            <View style={styles.progressContainer}>
-                                <View style={styles.progressBackground}>
-                                    <View 
-                                        style={[
-                                            styles.progressFill, 
-                                            { 
-                                                width: `${Math.min(percentageSpent, 100)}%`,
-                                                backgroundColor: percentageSpent > 90 ? '#FF5252' : '#4CAF50'
-                                            }
-                                        ]} 
-                                    />
-                                </View>
-                            </View>
-                            
-                            <View style={styles.bottomRow}>
-                                <Text style={styles.deadline}>{item.deadline}</Text>
-                                <Text style={styles.remainingText}>
-                                    {remaining}{item.currency} {getText('remaining')}
-                                </Text>
-                            </View>
-                        </Card.Content>
-                    </Card>
-                </ScrollView>
-            
-
-                
-            </View>
+            <Card style={styles.card}>
+                <Card.Content>
+                    <View style={styles.headerRow}>
+                        <Text style={styles.budgetName}>{item.name}</Text>
+                    </View>
+                    
+                    {/* Budget amount */}
+                    <View style={styles.amountContainer}>
+                        <Text style={styles.budgetTotal}>{item.total}{item.currency}</Text>
+                    </View>
+                    
+                    {/* Category and percentage row */}
+                    <View style={styles.categoryPercentRow}>
+                        <View style={styles.categoryContainer}>
+                            <View style={[styles.categoryDot, { backgroundColor: item.categoryColor }]} />
+                            <Text style={styles.categoryText}>{item.category}</Text>
+                        </View>
+                        <Text style={styles.percentageText}>{percentageSpent.toFixed(1)}%</Text>
+                    </View>
+                    
+                    {/* Progress Bar */}
+                    <View style={styles.progressContainer}>
+                        <View style={styles.progressBackground}>
+                            <View 
+                                style={[
+                                    styles.progressFill, 
+                                    { 
+                                        width: `${Math.min(percentageSpent, 100)}%`,
+                                        backgroundColor: percentageSpent > 90 ? '#FF5252' : '#4CAF50'
+                                    }
+                                ]} 
+                            />
+                        </View>
+                    </View>
+                    
+                    <View style={styles.bottomRow}>
+                        <Text style={styles.deadline}>{item.deadline}</Text>
+                        <Text style={styles.remainingText}>
+                            {remaining}{item.currency} {getText('remaining')}
+                        </Text>
+                    </View>
+                </Card.Content>
+            </Card>
         );
     };
 

@@ -16,8 +16,8 @@ const Budget = () => {
     // Categories for the filter
     const categories = [
         { id: 'all', name: 'All', color: '#4CAF50' },
-        { id: 'personal', name: 'Personal', color: '#FF5252' },
-        { id: 'home', name: 'Home', color: '#FFC107' },
+        { id: 'personal', name: 'Personal', color: '#FF33A1' },
+        { id: 'home', name: 'Home', color: '#FF5733' },
         { id: 'travel', name: 'Travel', color: '#2196F3' },
     ];
 
@@ -29,7 +29,7 @@ const Budget = () => {
             total: 3000,
             spent: 2900,
             category: "Personal",
-            categoryColor: "#FF5252",
+            categoryColor: "#FF33A1",
             deadline: "2025-05-01",
             currency: "€"
         },
@@ -39,7 +39,7 @@ const Budget = () => {
             total: 340000,
             spent: 100000,
             category: "Home",
-            categoryColor: "#FFC107",
+            categoryColor: "#FF5733",
             deadline: "2026-12-23",
             currency: "€"
         },

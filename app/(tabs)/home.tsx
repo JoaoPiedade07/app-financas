@@ -63,10 +63,12 @@ const Home = () => {
         iconColor: transaction.iconColor || (transaction.type ===
             'Recepies' ? '#4CAF50' : '#F44336'),
         iconName: transaction.iconName || (transaction.type ===
-            'Recepies' ? 'arrow-up-outline' : 'arrow-down-outline')
+            'Recepies' ? 'arrow-up-outline' : 'arrow-down-outline'),
+        
     }));
 
-    
+    // Filtrar transações que são "upcoming bills"
+    const upcomingBills = formattedTransactions.filter(transaction => transaction.type === 'upcoming Bills');
 
     return (
         <View style={styles.screen}>
@@ -150,53 +152,50 @@ const Home = () => {
                         </View>
                     </Card.Content>
                 </Card>
-                <Text style={styles.title}>{getText ('upcomingBills')}</Text>
-                <FlatList
-                    data={[
-                        { id: '1', date: '22 JUNE 2025', title: 'Crunchyroll', price: '9.50' },
-                        { id: '2', date: '15 MAY 2025', title: 'Spotify', price: '5.99' },
-                        { id: '3', date: '1 DECEMBER 2026', title: 'Amazon', price: '7.99' },
-                    ]}
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    keyExtractor={(item) => item.id}
-                    renderItem={({ item }) => (
-                        <View style={styles.cardContainerSlider}>
-                            <Text style={styles.dateTextSlider}>{item.date}</Text>
-                            <View style={styles.bottomSectionSlider}>
-                                <View>
-                                    <Text style={styles.titleSlider}>{item.title}</Text>
-                                    <Text style={styles.priceSlider}>{item.price}€</Text>
+                    <Text style={styles.title}>{getText ('upcomingBills')}</Text>
+                        <FlatList
+                        data={upcomingBills}
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        keyExtractor={(item) => item.id.toString()}
+                        renderItem={({ item }) => (
+                            <View style={styles.cardContainerSlider}>
+                                <Text style={styles.dateTextSlider}>{item.date}</Text>
+                                <View style={styles.bottomSectionSlider}>
+                                    <View>
+                                        <Text style={styles.titleSlider}>{item.name}</Text>
+                                        <Text style={styles.priceSlider}>{Math.abs(parseFloat(item.value)).toFixed(2)}€</Text>
+                                    </View>
+                                    <TouchableOpacity style={styles.buttonSlider}>
+                                        <Ionicons name="arrow-forward-outline" size={18} color="white" />
+                                    </TouchableOpacity>
                                 </View>
-                                <TouchableOpacity style={styles.buttonSlider}>
-                                    <Ionicons name="arrow-forward-outline" size={18} color="white" />
-                                </TouchableOpacity>
                             </View>
+                        )}
+                    />
+                    
+                    <Text style={styles.title}>{getText ('weekTransactions')}</Text>
+                    { formattedTransactions.map((transaction) => (
+                        <View key={transaction.id} style = {styles.transactionRow}>
+                            <View style = {styles.transactionInfo}>
+                                <View style = {[styles.iconContainerWeak, { 
+                                    backgroundColor: transaction.iconColor }]}>
+                                        <Ionicons name = {transaction.iconName as any} size = {18} color = "white" />
+                                </View>
+                                <View>
+                                    <Text style = {styles.transactionName}>
+                                        {transaction.name}</Text>
+                                    <Text style = {styles.transactionDate}>
+                                        {transaction.date}</Text>
+                                </View>
+                            </View>
+                            <Text style = {[styles.transactionValue,
+                                transaction.type === 'income' ? styles.positive 
+                                : styles.negative,]}>
+                                    {transaction.value}
+                                </Text>
                         </View>
-                    )}
-                />
-                <Text style={styles.title}>{getText ('weekTransactions')}</Text>
-                { formattedTransactions.map((transaction) => (
-                    <View key={transaction.id} style = {styles.transactionRow}>
-                        <View style = {styles.transactionInfo}>
-                            <View style = {[styles.iconContainerWeak, { 
-                                backgroundColor: transaction.iconColor }]}>
-                                    <Ionicons name = {transaction.iconName as any} size = {18} color = "white" />
-                            </View>
-                            <View>
-                                <Text style = {styles.transactionName}>
-                                    {transaction.name}</Text>
-                                <Text style = {styles.transactionDate}>
-                                    {transaction.date}</Text>
-                            </View>
-                        </View>
-                        <Text style = {[styles.transactionValue,
-                            transaction.type === 'income' ? styles.positive 
-                            : styles.negative,]}>
-                                {transaction.value}
-                            </Text>
-                    </View>
-                ))}
+                    ))}
 
             </ScrollView>
 
@@ -441,6 +440,7 @@ const styles = StyleSheet.create({
         borderRadius: 30,
         justifyContent: 'center',
         alignItems: 'center',
+        marginLeft: 15,
     },
     iconContainerWeak: {
         width: 32,

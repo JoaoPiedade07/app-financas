@@ -882,6 +882,7 @@ const styles = StyleSheet.create({
         borderRadius: 30,
         justifyContent: 'center',
         alignItems: 'center',
+        marginLeft: 10,
     },
 
     swipeContainer: {

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Modal, TextInput, Button, Dimensions, FlatList } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Modal, TextInput, Dimensions, FlatList } from 'react-native';
 import { Calendar, DateData } from 'react-native-calendars';
 import { BarChart } from '@mui/x-charts/BarChart';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -15,15 +15,9 @@ const categories = [
     { label: "Personal", color: "#FF33A1" }, //Color - Pink
 ];
 
-const data = [
-    { label: 'Recepies', value: 50 },
-    { label: 'Expenses', value: 80 },
-  ];
-
 const Finances = () => {
 
     const { getText } = useLanguage();
-    const [open, setOpen] = useState(false); 
     const [selectedCategory, setSelectedCategory] = useState(categories[0]);
     const [modalVisible, setModalVisible] = useState(false);
     const [modalVisibleCategories, setModalVisibleCategories] = useState(false);
@@ -32,7 +26,6 @@ const Finances = () => {
     const [dropdownPosition, setDropdownPosition] = useState({ x: 0, y: 0, width: 0 });
     const screenWidth = Dimensions.get('window').width;
     const screenHeight = Dimensions.get('window').height;
-    const [selectedDate, setSelectedDate] = useState<string | null>(null);
     const [selectedType, setSelectedType] = useState('Expenses'); // Default como despesa
     const [newTransaction, setNewTransaction] = useState({ name: '', date: '', value: '' });
     const [calendarVisible, setCalendarVisible] = useState(false);
@@ -45,78 +38,60 @@ const Finances = () => {
     const deleteOpacity = useSharedValue(0);
     const [transactionToDelete, setTransactionToDelete] = useState<any>(null);
     const [confirmDeleteVisible, setConfirmDeleteVisible] = useState(false);
-
-    const swipeGesture = Gesture.Pan()
-        .onUpdate((event) => {
-            // Only allow left swipe (negative values)
-            if (event.translationX < 0) {
-                swipeX.value = event.translationX;
-            }
-        })
-        .onEnd((event) => {
-            // If swiped more than 80px to the left, keep it open
-            // Otherwise, snap back to original position
-            if (event.translationX < -80) {
-                swipeX.value = withTiming(-80);
-            } else {
-                swipeX.value = withTiming(0);
-                setSwipedTransactionId(null);
-            }
-        });
     
-        const rowAnimatedStyle = useAnimatedStyle(() => {
-            return {
-                transform: [{ translateX: swipeX.value }]
-            };
-        });
+    const rowAnimatedStyle = useAnimatedStyle(() => {
+        return {
+            transform: [{ translateX: swipeX.value }]
+        };
+    });
             
-        // Function to handle starting a swipe on a transaction
-        const handleSwipeStart = useCallback((transactionId: string) => {
-            setSwipedTransactionId(transactionId);
-            swipeX.value = 0; // Reset the swipe position
-        }, []);
+    // Function to handle starting a swipe on a transaction
+    const handleSwipeStart = useCallback((transactionId: string) => {
+        setSwipedTransactionId(transactionId);
+        swipeX.value = 0; // Reset the swipe position
+    }, []);
 
-        // Create a separate gesture for each transaction
-        const createSwipeGesture = useCallback((transactionId: string) => {
-            return Gesture.Pan()
-                .onBegin(() => {
-                    handleSwipeStart(transactionId);
-                    deleteOpacity.value = 0;
-                    deleteWidth.value = 0;
-                })
-                .onUpdate((event) => {
-                    if (event.translationX < 0) {
-                        swipeX.value = Math.max(-80, event.translationX);
-                        deleteWidth.value = Math.min(80, Math.abs(event.translationX));
-                        deleteOpacity.value = Math.min(1, Math.abs(event.translationX) / 80);
-                    }
-                })
-                .onEnd((event) => {
-                    if (event.translationX < -40) { // Reduced threshold for better UX
-                        swipeX.value = withTiming(-80, { duration: 300 });
-                        deleteWidth.value = withTiming(80, { duration: 300 });
-                        deleteOpacity.value = withTiming(1, { duration: 300 });
-                    } else {
-                        swipeX.value = withTiming(0, { duration: 300 });
-                        deleteWidth.value = withTiming(0, { duration: 300 });
-                        deleteOpacity.value = withTiming(0, { duration: 300 });
-                        setTimeout(() => {
-                            setSwipedTransactionId(null);
-                        }, 300);
-                    }
-                });
+    // Create a separate gesture for each transaction
+    const createSwipeGesture = useCallback((transactionId: string) => {
+        return Gesture.Pan()
+            .onBegin(() => {
+                handleSwipeStart(transactionId);
+                deleteOpacity.value = 0;
+                deleteWidth.value = 0;
+            })
+            .onUpdate((event) => {
+                if (event.translationX < 0) {
+                    swipeX.value = Math.max(-80, event.translationX);
+                    deleteWidth.value = Math.min(80, Math.abs(event.translationX));
+                    deleteOpacity.value = Math.min(1, Math.abs(event.translationX) / 80);
+                }
+            })
+            .onEnd((event) => {
+                if (event.translationX < -40) { // Reduced threshold for better UX
+                    swipeX.value = withTiming(-80, { duration: 300 });
+                    deleteWidth.value = withTiming(80, { duration: 300 });
+                    deleteOpacity.value = withTiming(1, { duration: 300 });
+                } else {
+                    swipeX.value = withTiming(0, { duration: 300 });
+                    deleteWidth.value = withTiming(0, { duration: 300 });
+                    deleteOpacity.value = withTiming(0, { duration: 300 });
+                    setTimeout(() => {
+                        setSwipedTransactionId(null);
+                    }, 300);
+                }
+            });
         }, [handleSwipeStart]);
 
-        const deleteButtonStyle = useAnimatedStyle(() => {
-            return {
-                width: deleteWidth.value,
-                opacity: deleteOpacity.value,
-                transform: [
-                    { translateX: (80 - deleteWidth.value) }, // Slide in from right
-                    { scale: 0.9 + (deleteOpacity.value * 0.1) } // Subtle scale effect
-                ]
-            };
-        });
+    const deleteButtonStyle = useAnimatedStyle(() => {
+        return {
+            width: deleteWidth.value,
+            opacity: deleteOpacity.value,
+            transform: [
+                { translateX: (80 - deleteWidth.value) }, // Slide in from right
+                { scale: 0.9 + (deleteOpacity.value * 0.1) } // Subtle scale effect
+            ]
+        };
+    });
 
     // Add this to your existing animated styles
     const swipeContainerStyle = useAnimatedStyle(() => {
@@ -181,67 +156,67 @@ const Finances = () => {
             setModalVisible(false);
         };
     
-        const gesture = Gesture.Pan()
-        .onStart(() => {
-            // Quando o usuário começa a arrastar
-        })
-        .onUpdate((event) => {
-            if (event.translationY > 0) {
-                translateY.value = event.translationY; // Move o modal para baixo
-            }
-        })
-        .onEnd((event) => {
-            if (event.translationY > screenHeight * 0.3) {
-                // Fecha o modal se o usuário arrastar mais de 30% da tela
-                translateY.value = withTiming(screenHeight, { duration: 300 });
-                isModalOpen.value = false;
-                setTimeout(() =>  {
-                    if (modalVisible) setModalVisible(false);
-                    if (modalVisibleDelete) setModalVisibleDelete(false);
-                }, 300); // Fecha o modal após a animação
-            } else {
-                // Volta ao topo se o usuário não arrastar o suficiente
-                translateY.value = withTiming(0, { duration: 300 });
-            }
-        });
+    const gesture = Gesture.Pan()
+    .onStart(() => {
+        // Quando o usuário começa a arrastar
+    })
+    .onUpdate((event) => {
+        if (event.translationY > 0) {
+            translateY.value = event.translationY; // Move o modal para baixo
+        }
+    })
+    .onEnd((event) => {
+        if (event.translationY > screenHeight * 0.3) {
+            // Fecha o modal se o usuário arrastar mais de 30% da tela
+            translateY.value = withTiming(screenHeight, { duration: 300 });
+            isModalOpen.value = false;
+            setTimeout(() =>  {
+                if (modalVisible) setModalVisible(false);
+                if (modalVisibleDelete) setModalVisibleDelete(false);
+            }, 300); // Fecha o modal após a animação
+        } else {
+            // Volta ao topo se o usuário não arrastar o suficiente
+            translateY.value = withTiming(0, { duration: 300 });
+        }
+    });
     
-        const animatedStyle = useAnimatedStyle(() => {
-            return {
-                transform: [{ translateY: translateY.value }],
-            };
-        });
+    const animatedStyle = useAnimatedStyle(() => {
+        return {
+            transform: [{ translateY: translateY.value }],
+        };
+    });
 
-        return (
-            <View style={styles.screen}>
-                <ScrollView contentContainerStyle={styles.scrollContainer}>
-                <BarChart
+    return (
+        <View style={styles.screen}>
+            <ScrollView contentContainerStyle={styles.scrollContainer}>
+            <BarChart
                 xAxis={[{ scaleType: 'band', data: [ 'Receits', 'Expenses' ] }]}
                 series={[{ data: [1, 7] }, { data: [6, 2] }]}
                 width={400}
                 height={250}
                 />
-                <Text style={styles.title}>{getText ('upcomingBills')}</Text>
-                <FlatList
-                    data={transactions.filter(t => t.isUpcomingBill)}
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    keyExtractor={(item) => item.id.toString()}
-                    renderItem={({ item }) => (
-                    <View style={styles.cardContainerSlider}>
-                        <Text style={styles.dateTextSlider}>{item.date}</Text>
-                        <View style={styles.bottomSectionSlider}>
-                            <View>
-                                <Text style={styles.titleSlider}>{item.name}</Text>
-                                <Text style={styles.priceSlider}>{Math.abs(item.value).toFixed(2)}€</Text>
-                            </View>
-                            <TouchableOpacity style={styles.buttonSlider}>
-                                <Ionicons name="arrow-forward-outline" size={18} color="white" />
-                            </TouchableOpacity>
+            <Text style={styles.title}>{getText ('upcomingBills')}</Text>
+            <FlatList
+                data={transactions.filter(t => t.isUpcomingBill)}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                keyExtractor={(item) => item.id.toString()}
+                renderItem={({ item }) => (
+                <View style={styles.cardContainerSlider}>
+                    <Text style={styles.dateTextSlider}>{item.date}</Text>
+                    <View style={styles.bottomSectionSlider}>
+                        <View>
+                            <Text style={styles.titleSlider}>{item.name}</Text>
+                            <Text style={styles.priceSlider}>{Math.abs(item.value).toFixed(2)}€</Text>
                         </View>
+                        <TouchableOpacity style={styles.buttonSlider}>
+                            <Ionicons name="arrow-forward-outline" size={18} color="white" />
+                        </TouchableOpacity>
                     </View>
-                    )}
-                />
-                <TouchableOpacity onPress={() => {setModalVisibleDelete(true); 
+                </View>
+                )}
+            />
+            <TouchableOpacity onPress={() => {setModalVisibleDelete(true); 
                 translateY.value = withTiming(0, { duration: 300 });
                 isModalOpen.value = true;}} >
                 <Text style={styles.title}>Transactions</Text>
@@ -332,7 +307,6 @@ const Finances = () => {
                 <View style={styles.confirmModalContainer}>
                     <View style={styles.confirmModalContent}>
                         <Text style={styles.confirmModalTitle}>{getText ('deleteTransaction')}</Text>
-                        
                         {transactionToDelete && (
                         <View style={styles.confirmTransactionDetails}>
                             <Text style={styles.confirmQuestion}>
@@ -404,7 +378,7 @@ const Finances = () => {
                             {/* Tracinho no topo */}
                             <View style={styles.dragIndicator} />
                              {/* Título */}
-                             <Text style={styles.modalTitle}>{getText ('newTransaction')}</Text>
+                            <Text style={styles.modalTitle}>{getText ('newTransaction')}</Text>
                                 {/* Switcher */}
                             <View style={styles.switcherContainer}>
                                 {['Recepies', 'Expenses', 'Upcoming Bills'].map((type) => (

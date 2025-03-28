@@ -8,7 +8,30 @@ import { useLanguage } from '../Languages/LanguageContente';
  
 const Profile = () => {
 
-    const { getText } = useLanguage();
+    // Current language state (default to English)
+    const {currentLanguage, setCurrentLanguage, getText} = useLanguage();
+
+    const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
+    // Language options with display names
+    const languageOptions = [
+        { code: 'en', name: 'English' },
+        { code: 'pt', name: 'Português' },
+        { code: 'es', name: 'Español' },
+        { code: 'de', name: 'Deutsch' },
+        { code: 'ja', name: '日本語' },
+        { code: 'zh', name: '中文' },
+        
+    ];
+
+    const toggleLanguageDropdown = () => {
+        setShowLanguageDropdown(!showLanguageDropdown);
+    };
+
+    // Change language
+    const changeLanguage = (langCode: string) => {
+        setCurrentLanguage(langCode);
+        setShowLanguageDropdown(false);
+    };
 
     return (
         <View>
@@ -40,6 +63,46 @@ const Profile = () => {
                     </Card.Content>
                 </Link>
             </Card>
+
+            {/* Language Selector */}
+        <View style = {styles.languageSelector}>
+        <Text style = {styles.title}>{getText ('language')}</Text>
+        <TouchableOpacity 
+            style = {styles.languageButton}
+            onPress={toggleLanguageDropdown} >
+            <Text>
+                {languageOptions.find(lang => lang.code === currentLanguage)?.name} 
+            </Text>
+            <Ionicons name = "chevron-down-outline" size={16} color="#666" />
+        </TouchableOpacity>
+
+        {/* Language Dropdown Modal */}
+
+        <Modal
+            visible = {showLanguageDropdown}
+            transparent = {true}
+            animationType='fade'
+            onRequestClose={() => setShowLanguageDropdown(false)}>
+                <TouchableOpacity style = {styles.overlay}
+                activeOpacity = {1}
+                onPress = {() => setShowLanguageDropdown(false)}>
+                    <View style = {styles.dropdownContainer}>
+                        {languageOptions.map((lang) => (
+                            <TouchableOpacity
+                                key={lang.code}
+                                style = {[styles.languageOption,
+                                lang.code === currentLanguage && styles.selectedLanguage]}
+                                onPress={() => changeLanguage(lang.code)}>
+                                <Text style={styles.selectedLanguageText}>
+                                    {lang.name}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+
+                    </View>
+                </TouchableOpacity>
+            </Modal>
+    </View>
             
         </View>
     );

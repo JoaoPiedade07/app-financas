@@ -96,7 +96,7 @@ const Home = () => {
                                     />
                                 </View>
                                 <View style={styles.infoTextColumn}>
-                                    <Text style={styles.infoText}>{getText ('recepies')}</Text>
+                                    <Text style={styles.infoText}>{getText ('Recepies')}</Text>
                                     <Text style={[ styles.infoValue, styles.positive ]}>{totalIncome.toFixed(2)}€</Text>
                                 </View>
                                 </View>

@@ -550,20 +550,26 @@ const styles = StyleSheet.create({
     createButton: {
         position: 'absolute',
         bottom: 90,
-        alignSelf: 'center',
-        height: 50,
-        width: 50,
+        right: 30,
+        height: 60,
+        width: 60,
         borderRadius: 30,
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: '#007bff',
-        elevation: 5,
+        elevation: 8,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
     },
 
     buttonText: {
         color: '#fff',
-        fontSize: 30,
+        fontSize: 32,
+        fontWeight: 'bold',
         textAlign: 'center',
+        lineHeight: 56,
     },
 
     transactionRow: {

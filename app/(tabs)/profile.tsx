@@ -1,15 +1,27 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Image, Modal, Dimensions, FlatList } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, Modal, Pressable, Animated } from 'react-native';
 import { Card } from "react-native-paper";
 import { Ionicons } from '@expo/vector-icons';
 import { Link } from 'expo-router';
 import { useLanguage } from '../Languages/LanguageContente';
+import { useTheme } from '@/components/ThemeContext';
 
  
 const Profile = () => {
 
     // Current language state (default to English)
     const {currentLanguage, setCurrentLanguage, getText} = useLanguage();
+    const { theme, toggleTheme } = useTheme();
+    const switchAnim = useRef(new Animated.Value(theme === 'dark' ? 1 : 0)).current;
+
+    function handleToggleTheme() {
+        Animated.timing(switchAnim, {
+            toValue: theme === 'dark' ? 0 : 1,
+            duration: 300,
+            useNativeDriver: false,
+        }).start();
+        toggleTheme();
+    }
 
     const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
     // Language options with display names
@@ -35,16 +47,6 @@ const Profile = () => {
 
     return (
         <View>
-            <TouchableOpacity style={styles.profileIconContainer}>
-                <Image 
-                source={require('@/assets/images/logo.png')} 
-                style={styles.profileIcon} 
-            />
-            </TouchableOpacity>
-            <Text>{getText('name')}</Text>
-
-            
-
             <Text style={styles.title}>{getText ('category')}</Text>
             <Card style={styles.card}>
                 <Link href = { '/(profile)/categorias' }>
@@ -102,6 +104,26 @@ const Profile = () => {
                     </View>
                 </TouchableOpacity>
             </Modal>
+
+            {/* Switch personalizado abaixo do botão */}
+            <View style={styles.themeSwitcher}>
+                <Pressable onPress={handleToggleTheme}>
+                    <View style={[styles.switchContainer, theme === 'dark' ? styles.switchDark : styles.switchLight]}>
+                        <Animated.View 
+                            style={[
+                                styles.switchCircle,
+                                {
+                                    left: switchAnim.interpolate({
+                                        inputRange: [0, 1],
+                                        outputRange: [4, 26], // Move o círculo entre essas posições
+                                    }),
+                                    backgroundColor: theme === 'dark' ? '#fff' : '#007bff',
+                                }
+                            ]}
+                        />
+                    </View>
+                </Pressable>
+            </View>
     </View>
             
         </View>
@@ -254,7 +276,32 @@ const styles = StyleSheet.create ({
         shadowRadius: 4,
         minWidth: 120,
         maxWidth: 200,
-    },   
+    },  
+    themeSwitcher: {
+        marginTop: 20, // Espaçamento abaixo do botão
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+    },
+    switchContainer: {
+        width: 50,
+        height: 28,
+        borderRadius: 20,
+        justifyContent: 'center',
+        padding: 2,
+    },
+    switchLight: {
+        backgroundColor: '#ccc',
+    },
+    switchDark: {
+        backgroundColor: '#555',
+    },
+    switchCircle: {
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        position: 'absolute',
+    }, 
 });
 
 export default Profile;

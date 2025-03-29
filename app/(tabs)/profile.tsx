@@ -35,9 +35,6 @@ const Profile = () => {
 
     return (
         <View>
-            <Link href={ '/(profile)/settings' } style={styles.settingsIcon}>
-                <Ionicons name="menu-outline" size={28} color="black" />
-            </Link>
             <TouchableOpacity style={styles.profileIconContainer}>
                 <Image 
                 source={require('@/assets/images/logo.png')} 
@@ -66,7 +63,10 @@ const Profile = () => {
 
             {/* Language Selector */}
         <View style = {styles.languageSelector}>
-        <Text style = {styles.title}>{getText ('language')}</Text>
+            <View style={styles.titleWithIcon}>
+                <Ionicons name="globe-outline" size={20} color="#666" />
+                <Text style={styles.titleText}>{getText('language')}</Text>
+            </View>
         <TouchableOpacity 
             style = {styles.languageButton}
             onPress={toggleLanguageDropdown} >
@@ -136,6 +136,17 @@ const styles = StyleSheet.create ({
         marginTop: 20,
         marginBottom: 10,
     },
+    titleWithIcon: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginLeft: 15,
+        marginTop: 10,
+    },
+    titleText: {
+        fontSize: 18,
+        marginLeft: 8,
+        color: '#666',
+    },
     languageButton: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -172,7 +183,6 @@ const styles = StyleSheet.create ({
         fontWeight: 'bold',
         color: '#0066cc',
     },
-    // Existing styles
     card: {
         margin: 10,
         borderRadius: 10,

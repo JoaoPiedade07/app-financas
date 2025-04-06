@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
-import { Text, StyleSheet, ScrollView, View, FlatList, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { Text, StyleSheet, View, FlatList, TouchableOpacity } from 'react-native';
 import { Card } from 'react-native-paper';
 import { useLanguage } from '../Languages/LanguageContente';
-import { Ionicons } from '@expo/vector-icons';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import { useSharedValue, withTiming } from 'react-native-reanimated';
+import ErrorMessage from '@/components/ErrorMessage';
 
 const Budget = () => {
     const { getText } = useLanguage();
@@ -12,6 +11,8 @@ const Budget = () => {
     const [modalVisible, setModalVisible] = useState(false);
     const translateY = useSharedValue(0); // Controla a posição vertical do modal
     const isModalOpen = useSharedValue(true); // Indica se o modal está aberto
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     // Categories for the filter
     const categories = [
@@ -22,7 +23,7 @@ const Budget = () => {
     ];
 
     // Sample budget data array to match your Figma design
-    const budgets = [
+    const [budgets, setBudgets] = useState([
         {
             id: '1',
             name: "Trip to Berlin",
@@ -73,7 +74,35 @@ const Budget = () => {
             deadline: "2026-12-23",
             currency: "€"
         },
-    ];
+    ]);
+
+    // Simulating data fetching with error handling
+    const fetchBudgets = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            
+            // Simulate API call
+            // In a real app, this would be a fetch or axios call
+            // await fetch('your-api-endpoint')
+            
+            // Simulate network delay
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // If you want to test error handling, uncomment the line below
+            // throw new Error('Failed to fetch budgets');
+            
+            // If successful, data is already in the state
+            setLoading(false);
+        } catch (err) {
+            setLoading(false);
+            setError(err instanceof Error ? err.message : 'An unknown error occurred');
+        }
+    };
+
+    useEffect(() => {
+        fetchBudgets();
+    }, []);
 
     // Filter budgets based on selected category
     const filteredBudgets = selectedCategory === 'All' 
@@ -154,9 +183,25 @@ const Budget = () => {
         );
     };
 
+    if (loading) {
+        return (
+            <View style={[styles.screen, styles.centerContent]}>
+                <Text>Loading budgets...</Text>
+            </View>
+        );
+    }
+
     return (
         <View style={styles.screen}>
             <Text style={styles.title}>{getText('budget')}</Text>
+            
+            {/* Error message */}
+            {error && (
+                <ErrorMessage 
+                    message={error} 
+                    onRetry={fetchBudgets} 
+                />
+            )}
             
             {/* Categories horizontal scroll */}
             <View style={styles.categoriesContainer}>
@@ -171,18 +216,28 @@ const Budget = () => {
             </View>
             
             {/* Budgets list */}
-            <FlatList
-                data={filteredBudgets}
-                keyExtractor={item => item.id}
-                renderItem={renderBudgetItem}
-                contentContainerStyle={styles.scrollContainer}
-            />
+            {filteredBudgets.length > 0 ? (
+                <FlatList
+                    data={filteredBudgets}
+                    keyExtractor={item => item.id}
+                    renderItem={renderBudgetItem}
+                    contentContainerStyle={styles.scrollContainer}
+                />
+            ) : (
+                <View style={styles.emptyContainer}>
+                    <Text style={styles.emptyText}>
+                        {error ? getText('tryAgainLater') : getText('noBudgetsFound')}
+                    </Text>
+                </View>
+            )}
 
-        <TouchableOpacity style={styles.createButton} onPress={() => {setModalVisible(true); 
-            translateY.value = withTiming(0, { duration: 300 });
-            isModalOpen.value = true;}} >
-            <Text style={styles.buttonText}>+</Text>
-        </TouchableOpacity>
+            <TouchableOpacity style={styles.createButton} onPress={() => {
+                setModalVisible(true); 
+                translateY.value = withTiming(0, { duration: 300 });
+                isModalOpen.value = true;
+            }}>
+                <Text style={styles.buttonText}>+</Text>
+            </TouchableOpacity>
         </View>
     );
 }
@@ -192,12 +247,25 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#f5f5f5',
     },
-
+    centerContent: {
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    emptyContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    emptyText: {
+        fontSize: 16,
+        color: '#666',
+        textAlign: 'center',
+    },
     scrollContainer: {
         paddingBottom: 80,
         paddingHorizontal: 10,
     },
-
     title: {
         fontSize: 18,
         marginLeft: 15,
@@ -205,15 +273,12 @@ const styles = StyleSheet.create({
         color: '#666',
         marginBottom: 10,
     },
-    // Categories styles
     categoriesContainer: {
         marginBottom: 15,
     },
-
     categoriesList: {
         paddingHorizontal: 10,
     },
-
     categoryItem: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -224,51 +289,42 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         elevation: 4,
     },
-
     selectedCategoryItem: {
         backgroundColor: '#E8F5E9',
     },
-
     categoryItemText: {
         fontSize: 14,
         fontWeight: '500',
     },
-    // Budget card styles
     card: {
         marginBottom: 15,
         borderRadius: 12,
         elevation: 3,
         backgroundColor: "white",
     },
-
     headerRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'flex-start',
     },
-
     budgetName: {
         fontSize: 18,
         fontWeight: 'bold',
     },
-
     amountContainer: {
         alignItems: 'flex-end',
         marginBottom: 4,
     },
-
     budgetTotal: {
         fontSize: 16,
         fontWeight: '500',
     },
-
     categoryPercentRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: 6,
     },
-
     categoryContainer: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -283,58 +339,48 @@ const styles = StyleSheet.create({
         shadowRadius: 2,
         elevation: 2,
     },
-
     categoryDot: {
         width: 8,
         height: 8,
         borderRadius: 4,
         marginRight: 5,
     },
-
     categoryText: {
         fontSize: 14,
         color: '#666',
     },
-
     percentageText: {
         fontSize: 14,
         fontWeight: 'bold',
         color: '#666',
     },
-
     progressContainer: {
         marginBottom: 8,
     },
-
     progressBackground: {
         height: 10,
         backgroundColor: '#E0E0E0',
         borderRadius: 4,
         overflow: 'hidden',
     },
-
     progressFill: {
         height: '100%',
         borderRadius: 4,
     },
-
     bottomRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         marginTop: 5,
     },
-
     deadline: {
         fontSize: 14,
         color: '#666',
     },
-
     remainingText: {
         fontSize: 14,
         color: '#666',
     },
-
     createButton: {
         position: 'absolute',
         bottom: 90,
@@ -351,7 +397,6 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.3,
         shadowRadius: 4,
     },
-
     buttonText: {
         color: '#fff',
         fontSize: 32,

@@ -2,6 +2,7 @@ import React, { createContext, useState, useContext, ReactNode} from 'react';
 
 export const translations = {
     en: {
+        // Existing translations
         name: "Name",
         category: "Category",
         settings: "Settings",
@@ -30,9 +31,21 @@ export const translations = {
         deleteTransaction: "Delete Transaction",
         deleteConfirmation: "Are you sure you want to delete this transaction?",
         cancel: "Cancel",
-        delete: "Delete"
+        delete: "Delete",
+        
+        // Error handling translations
+        error: "Error",
+        networkError: "Network error. Please check your connection.",
+        tryAgain: "Try Again",
+        somethingWentWrong: "Something went wrong",
+        tryAgainLater: "Please try again later",
+        noBudgetsFound: "No budgets found for this category",
+        noTransactionsFound: "No transactions found",
+        loadingData: "Loading data...",
+        remaining: "remaining"
     },
     pt: {
+        // Existing translations
         name: "Nome",
         category: "Categoria",
         settings: "Configurações",
@@ -61,9 +74,22 @@ export const translations = {
         deleteTransaction: "Excluir Transação",
         deleteConfirmation: "Tem certeza que deseja excluir esta transação?",
         cancel: "Cancelar",
-        delete: "Excluir"
+        delete: "Excluir",
+        
+        // Error handling translations
+        error: "Erro",
+        networkError: "Erro de rede. Verifique sua conexão.",
+        tryAgain: "Tentar Novamente",
+        somethingWentWrong: "Algo deu errado",
+        tryAgainLater: "Por favor, tente novamente mais tarde",
+        noBudgetsFound: "Nenhum orçamento encontrado para esta categoria",
+        noTransactionsFound: "Nenhuma transação encontrada",
+        loadingData: "Carregando dados...",
+        remaining: "restante"
     },
+    // Add error translations for other languages as well
     es: {
+        // Existing translations
         name: "Nombre",
         category: "Categoría",
         settings: "Ajustes",
@@ -199,14 +225,25 @@ interface LanguageContextType {
 // Create the context
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
-// Create the probider component
+// Create the provider component
 export const LanguageProvider: React.FC<{children: ReactNode}> = ({ children}) => {
     const [currentLang, setCurrentLang] = useState('en');
+    const [error, setError] = useState<string | null>(null);
 
-    //Function to get text based on current language
+    // Function to get text based on current language with error handling
     const getText = (key: string) => {
-        const selectedLanguage = translations[currentLang as keyof typeof translations];
-        return (key in selectedLanguage) ? selectedLanguage[key as keyof typeof selectedLanguage] : key;
+        try {
+            const selectedLanguage = translations[currentLang as keyof typeof translations];
+            if (!selectedLanguage) {
+                console.warn(`Language '${currentLang}' not found, falling back to English`);
+                return translations.en[key as keyof typeof translations.en] || key;
+            }
+            return (key in selectedLanguage) ? selectedLanguage[key as keyof typeof selectedLanguage] : key;
+        } catch (err) {
+            console.error('Error getting translation:', err);
+            setError('Error loading translations');
+            return key; // Return the key itself as fallback
+        }
     };
 
     return (
@@ -215,7 +252,13 @@ export const LanguageProvider: React.FC<{children: ReactNode}> = ({ children}) =
             setCurrentLanguage: setCurrentLang,
             getText
         }}>
-            {children}
+            {error ? (
+                <div style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                    <span style={{ color: 'red' }}>{error}</span>
+                </div>
+            ) : (
+                children
+            )}
         </LanguageContext.Provider> 
     );
 };
@@ -225,7 +268,8 @@ export const useLanguage = () => {
     const context = useContext(LanguageContext);
     if(!context) {
         throw new Error('useLanguage must be used within a LanguageProvider');
-    } return context;
+    } 
+    return context;
 }
 
 export default LanguageProvider;

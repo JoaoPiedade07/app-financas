@@ -1,18 +1,32 @@
-import React, { useContext } from 'react';
-import { StyleSheet, Text, View, Dimensions, TouchableOpacity, ScrollView, Image, FlatList } from 'react-native';
+import React, { useContext, useState } from 'react';
+import { StyleSheet, Text, View, Dimensions, TouchableOpacity, ScrollView, Image, FlatList, RefreshControl, ActivityIndicator } from 'react-native';
 import { VictoryPie } from "victory";
 import { Card } from "react-native-paper";
 import { Ionicons } from '@expo/vector-icons';
 import { transformSync } from '@babel/core';
 import { useTransactions } from '../Transactions/TransactionContent';
 import { useLanguage } from '../Languages/LanguageContente';
+import ErrorMessage from '@/components/ErrorMessage';
 
 const screenWidth = Dimensions.get("window").width;
 
 const Home = () => {
 
     const { getText } = useLanguage();
-    const { transactions } = useTransactions();
+    const { transactions, loading, error, refreshTransactions } = useTransactions();
+    const [refreshing, setRefreshing] = useState(false);
+
+    // Function to handle refresh
+    const handleRefresh = async () => {
+        try {
+            setRefreshing(true);
+            await refreshTransactions();
+        } catch (err) {
+            // Error is already handled in the context
+        } finally {
+            setRefreshing(false);
+        }
+    };
 
     const totalIncome = transactions.filter(t => t.type === 'Recepies').reduce((sum, t) => sum + Math.abs(t.value), 0);
     const totalExpense = transactions.filter(t => t.type === 'Expenses').reduce((sum, t) => sum + Math.abs(t.value), 0);
@@ -72,135 +86,159 @@ const Home = () => {
 
     return (
         <View style={styles.screen}>
-            <ScrollView contentContainerStyle={styles.scrollContainer}>
-                <Text style = {{ fontSize: 26, marginLeft: 20, marginTop: 20, }}>{totalBalance.toFixed(2)}€</Text>
-                <Text style = {{ fontSize: 18, marginLeft: 20, marginBottom: 15, color: '#333' }}>{getText ('earnings')}</Text>
-                <TouchableOpacity style={styles.profileIconContainer}>
-                    <Image 
-                    source={require('@/assets/images/logo.png')} 
-                    style={styles.profileIcon} 
+            <ScrollView 
+                contentContainerStyle={styles.scrollContainer}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={handleRefresh}
+                        colors={['#007bff']}
                     />
-                </TouchableOpacity>
-                <Card style={styles.card}>
-                    <Card.Content>
-                        {/* Container dos textos "Receitas" e "Despesas" */}
-                        <View style={styles.contentContainer}>
-                            {/* Container Esquerdo (Receitas) */}
-                            <View style={styles.leftContainer}>
-                                <View style={styles.infoLabelRow}>
-                                <View style={[styles.iconContainer, { backgroundColor: '#4CAF50' }]}>
-                                    <Ionicons 
-                                    name="arrow-up-outline" 
-                                    size={18} 
-                                    color="white" 
-                                    />
-                                </View>
-                                <View style={styles.infoTextColumn}>
-                                    <Text style={styles.infoText}>{getText ('Recepies')}</Text>
-                                    <Text style={[ styles.infoValue, styles.positive ]}>{totalIncome.toFixed(2)}€</Text>
-                                </View>
-                                </View>
-                            </View>
-
-                            {/* Container Direito (Despesas) */}
-                            <View style={styles.rightContainer}>
-                                <View style={styles.infoLabelRow}>
-                                <View style={[styles.iconContainer, { backgroundColor: '#F44336' }]}>
-                                    <Ionicons 
-                                    name="arrow-down-outline" 
-                                    size={18} 
-                                    color="white" 
-                                    />
-                                </View>
-                                <View style={styles.infoTextColumn}>
-                                    <Text style={styles.infoText}>{getText ('expenses')}</Text>
-                                    <Text style={[ styles.infoValue, styles.negative ]}>{totalExpense.toFixed(2)}€</Text>
-                                </View>
-                                </View>
-                            </View>
-                            </View>
-                    </Card.Content>
-                </Card>
-                <Text style={styles.title}>{getText ('expensesByCategory')}</Text>
-                <Card style={styles.card}>
-                    <Card.Content>
-                        <View style={styles.container}>
-                            <View style={styles.chartContainer}>
-                                <VictoryPie
-                                    data={chartData}
-                                    x="label"
-                                    y="value"
-                                    innerRadius={65}
-                                    padAngle={2}
-                                    labels={() => null}
-                                    style={{ labels: { display: "none" } }}
-                                    colorScale={chartData.map(item => item.color)}
-                                    width={screenWidth * 0.65}
-                                    height={260}
-                                    padding={{ left: 0, right: 50 }}
-                                />
-                            </View>
-                            <View style={styles.legend}>
-                                {chartData.map((item, index) => (
-                                    <View key={index} style={styles.legendItem}>
-                                        <View style={[styles.colorBox, { backgroundColor: item.color }]} />
-                                        <Text style={styles.legendText}>{item.label}</Text>
-                                        <Text style={styles.euroText}>{item.euro}€</Text>
+                }
+            >
+                {loading && !refreshing ? (
+                    <View style={styles.loadingContainer}>
+                        <ActivityIndicator size="large" color="#007bff" />
+                        <Text style={styles.loadingText}>{getText('loading')}</Text>
+                    </View>
+                ) : error ? (
+                    <ErrorMessage message={getText('errorLoadingData')} />
+                ) : (
+                    <>
+                        <Text style={{ fontSize: 26, marginLeft: 20, marginTop: 20, }}>{totalBalance.toFixed(2)}€</Text>
+                        <Text style={{ fontSize: 18, marginLeft: 20, marginBottom: 15, color: '#333' }}>{getText('earnings')}</Text>
+                        <TouchableOpacity style={styles.profileIconContainer}>
+                            <Image 
+                                source={require('@/assets/images/logo.png')} 
+                                style={styles.profileIcon} 
+                            />
+                        </TouchableOpacity>
+                        <Card style={styles.card}>
+                            <Card.Content>
+                                {/* Container dos textos "Receitas" e "Despesas" */}
+                                <View style={styles.contentContainer}>
+                                    {/* Container Esquerdo (Receitas) */}
+                                    <View style={styles.leftContainer}>
+                                        <View style={styles.infoLabelRow}>
+                                        <View style={[styles.iconContainer, { backgroundColor: '#4CAF50' }]}>
+                                            <Ionicons 
+                                            name="arrow-up-outline" 
+                                            size={18} 
+                                            color="white" 
+                                            />
+                                        </View>
+                                        <View style={styles.infoTextColumn}>
+                                            <Text style={styles.infoText}>{getText ('Recepies')}</Text>
+                                            <Text style={[ styles.infoValue, styles.positive ]}>{totalIncome.toFixed(2)}€</Text>
+                                        </View>
+                                        </View>
                                     </View>
-                                ))}
-                            </View>
-                        </View>
-                    </Card.Content>
-                </Card>
-                    <Text style={styles.title}>{getText ('upcomingBills')}</Text>
-                        <FlatList
-                        data={upcomingBills}
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        keyExtractor={(item) => item.id.toString()}
-                        renderItem={({ item }) => (
-                            <View style={styles.cardContainerSlider}>
-                                <Text style={styles.dateTextSlider}>{item.date}</Text>
-                                <View style={styles.bottomSectionSlider}>
-                                    <View>
-                                        <Text style={styles.titleSlider}>{item.name}</Text>
-                                        <Text style={styles.priceSlider}>{Math.abs(parseFloat(item.value)).toFixed(2)}€</Text>
+
+                                    {/* Container Direito (Despesas) */}
+                                    <View style={styles.rightContainer}>
+                                        <View style={styles.infoLabelRow}>
+                                        <View style={[styles.iconContainer, { backgroundColor: '#F44336' }]}>
+                                            <Ionicons 
+                                            name="arrow-down-outline" 
+                                            size={18} 
+                                            color="white" 
+                                            />
+                                        </View>
+                                        <View style={styles.infoTextColumn}>
+                                            <Text style={styles.infoText}>{getText ('expenses')}</Text>
+                                            <Text style={[ styles.infoValue, styles.negative ]}>{totalExpense.toFixed(2)}€</Text>
+                                        </View>
+                                        </View>
                                     </View>
-                                    <TouchableOpacity style={styles.buttonSlider}>
-                                        <Ionicons name="arrow-forward-outline" size={18} color="white" />
-                                    </TouchableOpacity>
+                                    </View>
+                            </Card.Content>
+                        </Card>
+                        <Text style={styles.title}>{getText ('expensesByCategory')}</Text>
+                        <Card style={styles.card}>
+                            <Card.Content>
+                                <View style={styles.container}>
+                                    <View style={styles.chartContainer}>
+                                        <VictoryPie
+                                            data={chartData}
+                                            x="label"
+                                            y="value"
+                                            innerRadius={65}
+                                            padAngle={2}
+                                            labels={() => null}
+                                            style={{ labels: { display: "none" } }}
+                                            colorScale={chartData.map(item => item.color)}
+                                            width={screenWidth * 0.65}
+                                            height={260}
+                                            padding={{ left: 0, right: 50 }}
+                                        />
+                                    </View>
+                                    <View style={styles.legend}>
+                                        {chartData.map((item, index) => (
+                                            <View key={index} style={styles.legendItem}>
+                                                <View style={[styles.colorBox, { backgroundColor: item.color }]} />
+                                                <Text style={styles.legendText}>{item.label}</Text>
+                                                <Text style={styles.euroText}>{item.euro}€</Text>
+                                            </View>
+                                        ))}
+                                    </View>
                                 </View>
-                            </View>
-                        )}
-                    />
-                    
-                    <Text style={styles.title}>{getText ('weekTransactions')}</Text>
-                    { formattedTransactions.map((transaction) => (
-                        <View key={transaction.id} style = {styles.transactionRow}>
-                            <View style = {styles.transactionInfo}>
-                                <View style = {[styles.iconContainerWeak, { 
-                                    backgroundColor: transaction.iconColor }]}>
-                                        <Ionicons name = {transaction.iconName as any} size = {18} color = "white" />
+                            </Card.Content>
+                        </Card>
+                            <Text style={styles.title}>{getText ('upcomingBills')}</Text>
+                                <FlatList
+                                data={upcomingBills}
+                                horizontal
+                                showsHorizontalScrollIndicator={false}
+                                keyExtractor={(item) => item.id.toString()}
+                                renderItem={({ item }) => (
+                                    <View style={styles.cardContainerSlider}>
+                                        <Text style={styles.dateTextSlider}>{item.date}</Text>
+                                        <View style={styles.bottomSectionSlider}>
+                                            <View>
+                                                <Text style={styles.titleSlider}>{item.name}</Text>
+                                                <Text style={styles.priceSlider}>{Math.abs(parseFloat(item.value)).toFixed(2)}€</Text>
+                                            </View>
+                                            <TouchableOpacity style={styles.buttonSlider}>
+                                                <Ionicons name="arrow-forward-outline" size={18} color="white" />
+                                            </TouchableOpacity>
+                                        </View>
+                                    </View>
+                                )}
+                            />
+                            
+                            <Text style={styles.title}>{getText ('weekTransactions')}</Text>
+                            {formattedTransactions.length > 0 ? (
+                                formattedTransactions.map((transaction) => (
+                                    <View key={transaction.id} style={styles.transactionRow}>
+                                        <View style={styles.transactionInfo}>
+                                            <View style={[styles.iconContainerWeak, { 
+                                                backgroundColor: transaction.iconColor }]}>
+                                                    <Ionicons name={transaction.iconName as any} size={18} color="white" />
+                                            </View>
+                                            <View>
+                                                <Text style={styles.transactionName}>
+                                                    {transaction.name}</Text>
+                                                <Text style={styles.transactionDate}>
+                                                    {transaction.date}</Text>
+                                            </View>
+                                        </View>
+                                        <Text style={[styles.transactionValue,
+                                            transaction.type === 'income' ? styles.positive 
+                                            : styles.negative,]}>
+                                                {transaction.value}
+                                            </Text>
+                                    </View>
+                                ))
+                            ) : (
+                                <View style={styles.emptyContainer}>
+                                    <Text style={styles.emptyText}>{getText('noTransactionsFound')}</Text>
                                 </View>
-                                <View>
-                                    <Text style = {styles.transactionName}>
-                                        {transaction.name}</Text>
-                                    <Text style = {styles.transactionDate}>
-                                        {transaction.date}</Text>
-                                </View>
-                            </View>
-                            <Text style = {[styles.transactionValue,
-                                transaction.type === 'income' ? styles.positive 
-                                : styles.negative,]}>
-                                    {transaction.value}
-                                </Text>
-                        </View>
-                    ))}
-
-            </ScrollView>
-
-        </View>
-    );
+                            )}
+                        </>
+                    )}
+                </ScrollView>
+            </View>
+        );
 };
 
 const styles = StyleSheet.create({
@@ -450,6 +488,33 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginRight: 5,
         marginLeft: 10, // Espaço entre o ícone e o texto
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+        minHeight: 200,
+    },
+    loadingText: {
+        marginTop: 10,
+        fontSize: 16,
+        color: '#666',
+    },
+    emptyContainer: {
+        padding: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#f9f9f9',
+        borderRadius: 8,
+        marginVertical: 10,
+        marginHorizontal: 10,
+        minWidth: 180,
+    },
+    emptyText: {
+        fontSize: 16,
+        color: '#666',
+        textAlign: 'center',
     },
 });
 

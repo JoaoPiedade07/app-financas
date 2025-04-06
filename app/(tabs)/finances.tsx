@@ -1,12 +1,13 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Modal, TextInput, Dimensions, FlatList } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Modal, TextInput, Dimensions, FlatList, RefreshControl, ActivityIndicator } from 'react-native';
 import { Calendar, DateData } from 'react-native-calendars';
 import { BarChart } from '@mui/x-charts/BarChart';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useTransactions } from '../Transactions/TransactionContent';
 import { useLanguage } from '../Languages/LanguageContente';
+import ErrorMessage from '@/components/ErrorMessage';
 
 const categories = [
     { label: "Home", color: "#FF5733" }, //Color - Red
@@ -31,19 +32,43 @@ const Finances = () => {
     const [calendarVisible, setCalendarVisible] = useState(false);
     const translateY = useSharedValue(0); // Controla a posição vertical do modal
     const isModalOpen = useSharedValue(true); // Indica se o modal está aberto
-    const { transactions, addTransaction, deleteTransaction } = useTransactions();
+    const { transactions, addTransaction, deleteTransaction, loading, error, refreshTransactions } = useTransactions();
     const [swipedTransactionId, setSwipedTransactionId] = useState<string | null>(null);
     const swipeX = useSharedValue(0);
     const deleteWidth = useSharedValue(0);
     const deleteOpacity = useSharedValue(0);
     const [transactionToDelete, setTransactionToDelete] = useState<any>(null);
     const [confirmDeleteVisible, setConfirmDeleteVisible] = useState(false);
+    const [refreshing, setRefreshing] = useState(false);
+    const [addTransactionError, setAddTransactionError] = useState<string | null>(null);
     
     const rowAnimatedStyle = useAnimatedStyle(() => {
         return {
             transform: [{ translateX: swipeX.value }]
         };
     });
+
+    // Function to refresh transactions
+    const handleRefresh = async () => {
+        try {
+            setRefreshing(true);
+            await refreshTransactions();
+        } catch (err) {
+            // Error is already handled in the context
+        } finally {
+            setRefreshing(false);
+        }
+    };
+
+    // Clear error message after 5 seconds
+    useEffect(() => {
+        if (addTransactionError) {
+            const timer = setTimeout(() => {
+                setAddTransactionError(null);
+            }, 5000);
+            return () => clearTimeout(timer);
+        }
+    }, [addTransactionError]);
             
     // Function to handle starting a swipe on a transaction
     const handleSwipeStart = useCallback((transactionId: string) => {
@@ -93,7 +118,6 @@ const Finances = () => {
         };
     });
 
-    // Add this to your existing animated styles
     const swipeContainerStyle = useAnimatedStyle(() => {
         return {
             backgroundColor: swipedTransactionId ? 
@@ -158,7 +182,7 @@ const Finances = () => {
     
     const gesture = Gesture.Pan()
     .onStart(() => {
-        // Quando o usuário começa a arrastar
+
     })
     .onUpdate((event) => {
         if (event.translationY > 0) {
@@ -186,9 +210,37 @@ const Finances = () => {
         };
     });
 
+    const handleDeleteTransaction = async (id: string | number) => {
+        try {
+            await deleteTransaction(id);
+            setConfirmDeleteVisible(false);
+            setTransactionToDelete(null);
+            
+            // Reset the swipe state
+            swipeX.value = withTiming(0, { duration: 300 });
+            deleteWidth.value = withTiming(0, { duration: 300 });
+            deleteOpacity.value = withTiming(0, { duration: 300 });
+            setTimeout(() => {
+                setSwipedTransactionId(null);
+            }, 300);
+        } catch (err: any) {
+            // Show error message but keep modal open
+            alert(err.message || getText('errorDeletingTransaction'));
+        }
+    };
+
     return (
         <View style={styles.screen}>
-            <ScrollView contentContainerStyle={styles.scrollContainer}>
+            <ScrollView 
+                contentContainerStyle={styles.scrollContainer}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={handleRefresh}
+                        colors={['#007bff']}
+                    />
+                }
+            >
             <BarChart
                 xAxis={[{ scaleType: 'band', data: [ 'Receits', 'Expenses' ] }]}
                 series={[{ data: [1, 7] }, { data: [6, 2] }]}
@@ -215,30 +267,46 @@ const Finances = () => {
                     </View>
                 </View>
                 )}
+                ListEmptyComponent={
+                    <View style={styles.emptyContainer}>
+                        <Text style={styles.emptyText}>
+                            {error ? getText('tryAgainLater') : getText('noUpcomingBills')}
+                        </Text>
+                    </View>
+                }
             />
+            
             <TouchableOpacity onPress={() => {setModalVisibleDelete(true); 
                 translateY.value = withTiming(0, { duration: 300 });
                 isModalOpen.value = true;}} >
                 <Text style={styles.title}>Transactions</Text>
-                {transactions.map((transaction) => (
-                    <View key={transaction.id} style={styles.transactionRow}>
-                        <View style={styles.transactionInfo}>
-                            <View style={[styles.iconContainerWeak, { backgroundColor: transaction.type === 'Recepies' ? '#4CAF50' : '#F44336' }]}>
-                                <Ionicons name={transaction.type === 'Recepies' ? "arrow-up-outline" : "arrow-down-outline"} size={18} color="white" />
+                {transactions.length > 0 ? (
+                    transactions.map((transaction) => (
+                        <View key={transaction.id} style={styles.transactionRow}>
+                            <View style={styles.transactionInfo}>
+                                <View style={[styles.iconContainerWeak, { backgroundColor: transaction.type === 'Recepies' ? '#4CAF50' : '#F44336' }]}>
+                                    <Ionicons name={transaction.type === 'Recepies' ? "arrow-up-outline" : "arrow-down-outline"} size={18} color="white" />
+                                </View>
+                                <View>
+                                    <Text style={styles.transactionName}>{transaction.name}</Text>
+                                    <Text style={styles.transactionDate}>{transaction.date}</Text>
+                                </View>
                             </View>
-                            <View>
-                                <Text style={styles.transactionName}>{transaction.name}</Text>
-                                <Text style={styles.transactionDate}>{transaction.date}</Text>
-                            </View>
+                            <Text style={[styles.transactionValue, transaction.type === 'Recepies' ? styles.positive : styles.negative]}>
+                                {transaction.value >= 0 ? `+${transaction.value.toFixed(2)}` : `${transaction.value.toFixed(2)}`}
+                            </Text>
                         </View>
-                        <Text style={[styles.transactionValue, transaction.type === 'Recepies' ? styles.positive : styles.negative]}>
-                            {transaction.value >= 0 ? `+${transaction.value.toFixed(2)}` : `${transaction.value.toFixed(2)}`}
+                    ))
+                ) : (
+                    <View style={styles.emptyContainer}>
+                        <Text style={styles.emptyText}>
+                            {error ? getText('tryAgainLater') : getText('noTransactionsFound')}
                         </Text>
                     </View>
-                ))}
+                )}
                 </TouchableOpacity>
             </ScrollView>
-
+            
             {/* Modal para eliminar transação */}
 
             <Modal visible={modalVisibleDelete} animationType='none' transparent={true}>
@@ -379,7 +447,13 @@ const Finances = () => {
                             <View style={styles.dragIndicator} />
                              {/* Título */}
                             <Text style={styles.modalTitle}>{getText ('newTransaction')}</Text>
-                                {/* Switcher */}
+                            
+                            {/* Error message */}
+                            {addTransactionError && (
+                                <View style={styles.errorContainer}>
+                                    <Text style={styles.errorText}>{addTransactionError}</Text>
+                                </View>
+                            )}
                             <View style={styles.switcherContainer}>
                                 {['Recepies', 'Expenses', 'Upcoming Bills'].map((type) => (
                                     <TouchableOpacity
@@ -972,6 +1046,32 @@ const styles = StyleSheet.create({
         color: 'white',
         fontWeight: 'bold',
         fontSize: 16,
+    },
+
+    errorContainer: {
+        backgroundColor: '#FFEBEE',
+        borderRadius: 8,
+        padding: 10,
+        marginBottom: 15,
+        borderLeftWidth: 4,
+        borderLeftColor: '#F44336',
+    },
+    errorText: {
+        color: '#D32F2F',
+        fontSize: 14,
+    },
+    emptyContainer: {
+        padding: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#f9f9f9',
+        borderRadius: 8,
+        marginVertical: 10,
+    },
+    emptyText: {
+        fontSize: 16,
+        color: '#666',
+        textAlign: 'center',
     },
 });
 

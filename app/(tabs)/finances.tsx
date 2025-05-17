@@ -1066,6 +1066,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         backgroundColor: '#f9f9f9',
         borderRadius: 8,
+        marginHorizontal: 10,
         marginVertical: 10,
     },
     emptyText: {

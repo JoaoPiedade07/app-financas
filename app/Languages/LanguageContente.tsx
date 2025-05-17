@@ -33,6 +33,7 @@ export const translations = {
         cancel: "Cancel",
         delete: "Delete",
         
+        
         // Error handling translations
         error: "Error",
         networkError: "Network error. Please check your connection.",
@@ -41,6 +42,7 @@ export const translations = {
         tryAgainLater: "Please try again later",
         noBudgetsFound: "No budgets found for this category",
         noTransactionsFound: "No transactions found",
+        noUpcomingBillsFound: "No upcoming bills found",
         loadingData: "Loading data...",
         remaining: "remaining"
     },

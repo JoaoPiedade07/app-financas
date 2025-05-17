@@ -204,6 +204,11 @@ const Home = () => {
                                         </View>
                                     </View>
                                 )}
+                                ListEmptyComponent={
+                                    <View style={styles.emptyContainer}>
+                                        <Text style={styles.emptyText}>{getText('noUpcomingBillsFound')}</Text>
+                                    </View>
+                                }
                             />
                             
                             <Text style={styles.title}>{getText ('weekTransactions')}</Text>

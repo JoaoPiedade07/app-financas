@@ -270,7 +270,7 @@ const Finances = () => {
                 ListEmptyComponent={
                     <View style={styles.emptyContainer}>
                         <Text style={styles.emptyText}>
-                            {error ? getText('tryAgainLater') : getText('noUpcomingBills')}
+                            {error ? getText('tryAgainLater') : getText('noUpcomingBillsFound')}
                         </Text>
                     </View>
                 }

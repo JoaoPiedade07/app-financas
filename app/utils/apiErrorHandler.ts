@@ -89,3 +89,5 @@ export const fetchWithTimeout = async (
     throw error;
   }
 };
+
+export default handleApiError;

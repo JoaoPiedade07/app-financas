@@ -1,7 +1,20 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect } from "react";
 import { handleApiError } from "../utils/apiErrorHandler";
+import { db } from "@/app/Firebase/firebase";
+import { 
+  collection, 
+  addDoc, 
+  getDocs, 
+  deleteDoc, 
+  doc, 
+  query, 
+  orderBy,
+  onSnapshot
+} from "firebase/firestore";
+import NetInfo from '@react-native-community/netinfo';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export interface Transaction { //Define the transaction type
+export interface Transaction {
     id: string | number;
     name: string;
     date: string;
@@ -13,48 +26,112 @@ export interface Transaction { //Define the transaction type
     isUpcomingBill?: boolean; 
 }
 
-interface TransactionContextType { //Define the context type
+interface TransactionContextType {
     transactions: Transaction[];
-    addTransaction: (transaction: Omit<Transaction, 'id' | 'iconColor' | 'iconName'>) => void;
-    deleteTransaction: (id: string | number) => void;
+    addTransaction: (transaction: Omit<Transaction, 'id' | 'iconColor' | 'iconName'>) => Promise<void>;
+    deleteTransaction: (id: string | number) => Promise<void>;
     loading: boolean;
     error: string | null;
     refreshTransactions: () => Promise<void>;
+    isOnline: boolean;
 }
 
-//Create the context
 const TransactionContext = createContext<TransactionContextType | undefined>(undefined);
 
-//Create a provider component
 export const TransactionProvider: React.FC<{children: ReactNode}> = ({
     children }) => {
         const [transactions, setTransactions] = useState<Transaction[]>([]);
         const [loading, setLoading] = useState(false);
         const [error, setError] = useState<string | null>(null);
+        const [isOnline, setIsOnline] = useState(true);
 
-        // Function to fetch transactions (simulated)
+        // Monitorar o estado da conexão
+        useEffect(() => {
+            const unsubscribe = NetInfo.addEventListener(state => {
+                setIsOnline(state.isConnected ?? false);
+            });
+
+            return () => unsubscribe();
+        }, []);
+
+        // Função para buscar transações do Firestore
         const fetchTransactions = async () => {
             try {
                 setLoading(true);
                 setError(null);
                 
-                // Simulate API call
-                // In a real app, this would be a fetch or axios call
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                // Verificar conexão antes de tentar buscar dados
+                const netInfo = await NetInfo.fetch();
+                if (!netInfo.isConnected) {
+                    setIsOnline(false);
+                    setLoading(false);
+                    setError("Sem conexão com a internet");
+                    return () => {};
+                }
                 
-                // For now, we're using the existing data
-                // If you had an API, you would fetch and set data here
+                // Criar uma referência à coleção de transações
+                const transactionsRef = collection(db, 'transactions');
+                const q = query(transactionsRef, orderBy('date', 'desc'));
                 
-                setLoading(false);
+                // Configurar um listener com timeout
+                let timeoutId: NodeJS.Timeout;
+                const timeoutPromise = new Promise<() => void>((_, reject) => {
+                    timeoutId = setTimeout(() => {
+                        reject(new Error("Tempo limite excedido ao buscar transações"));
+                    }, 15000); // 15 segundos de timeout
+                });
+                
+                // Configurar um listener para atualizações em tempo real
+                const unsubscribe = onSnapshot(q, (querySnapshot) => {
+                    clearTimeout(timeoutId);
+                    const transactionsData: Transaction[] = [];
+                    querySnapshot.forEach((doc) => {
+                        const data = doc.data();
+                        transactionsData.push({
+                            id: doc.id,
+                            name: data.name,
+                            date: data.date,
+                            value: data.value,
+                            type: data.type,
+                            category: data.category || 'Other',
+                            iconColor: data.iconColor,
+                            iconName: data.iconName,
+                            isUpcomingBill: data.isUpcomingBill || false
+                        });
+                    });
+                    setTransactions(transactionsData);
+                    setLoading(false);
+                }, (err) => {
+                    clearTimeout(timeoutId);
+                    console.error("Erro ao buscar transações:", err);
+                    setError(handleApiError(err));
+                    setLoading(false);
+                });
+                
+                // Retornar a função de limpeza para desinscrever o listener
+                return () => {
+                    clearTimeout(timeoutId);
+                    unsubscribe();
+                };
             } catch (err) {
                 setLoading(false);
                 setError(handleApiError(err));
+                return () => {};
             }
         };
 
-        // Initial fetch
+        // Inicializar o listener
         useEffect(() => {
-            fetchTransactions();
+            const unsubscribePromise = fetchTransactions();
+            
+            return () => {
+                // Usar Promise.resolve para garantir que temos uma Promise
+                Promise.resolve(unsubscribePromise).then(unsubscribe => {
+                    if (typeof unsubscribe === 'function') {
+                        unsubscribe();
+                    }
+                });
+            };
         }, []);
 
         const addTransaction = async (transaction: Omit<Transaction, 'id' | 'iconColor' | 'iconName'>) => {
@@ -64,17 +141,37 @@ export const TransactionProvider: React.FC<{children: ReactNode}> = ({
                 
                 const newTransaction = {
                     ...transaction,
-                    id: Date.now().toString(),
-                    category: transaction.category || 'Other', //Garante sempre que tenha uma categoria
+                    category: transaction.category || 'Other',
                     iconColor: transaction.type === 'Recepies' ? '#4CAF50' : '#F44336',
                     iconName: transaction.type === 'Recepies'? 'arrow-up-outline' : 'arrow-down-outline',
+                    createdAt: new Date().toISOString()
                 };
-
-                // Simulate API call for adding transaction
-                await new Promise(resolve => setTimeout(resolve, 500));
+    
+                // Adicionar ao Firestore
+                if (isOnline) {
+                    await addDoc(collection(db, 'transactions'), newTransaction);
+                } else {
+                    // Armazenar localmente para sincronização posterior
+                    const localTransaction = {
+                        ...newTransaction,
+                        id: Date.now().toString(),
+                        pendingSync: true
+                    };
+                    
+                    // Adicionar à lista local
+                    setTransactions(prevTransactions => [...prevTransactions, localTransaction as Transaction]);
+                    
+                    // Armazenar na fila de sincronização
+                    try {
+                        const pendingTransactionsJson = await AsyncStorage.getItem('pendingTransactions');
+                        const pendingTransactions = pendingTransactionsJson ? JSON.parse(pendingTransactionsJson) : [];
+                        pendingTransactions.push(localTransaction);
+                        await AsyncStorage.setItem('pendingTransactions', JSON.stringify(pendingTransactions));
+                    } catch (error) {
+                        console.error('Erro ao salvar transação pendente:', error);
+                    }
+                }
                 
-                // Add the new transaction to the state
-                setTransactions(prevTransactions => [...prevTransactions, newTransaction]);
                 setLoading(false);
             } catch (err) {
                 setLoading(false);
@@ -87,12 +184,26 @@ export const TransactionProvider: React.FC<{children: ReactNode}> = ({
                 setLoading(true);
                 setError(null);
                 
-                // Simulate API call for deleting transaction
-                await new Promise(resolve => setTimeout(resolve, 500));
+                if (isOnline) {
+                    // Excluir do Firestore
+                    await deleteDoc(doc(db, 'transactions', id.toString()));
+                } else {
+                    // Marcar para exclusão quando online
+                    try {
+                        const pendingDeletionsJson = await AsyncStorage.getItem('pendingDeletions');
+                        const pendingDeletions = pendingDeletionsJson ? JSON.parse(pendingDeletionsJson) : [];
+                        pendingDeletions.push(id.toString());
+                        await AsyncStorage.setItem('pendingDeletions', JSON.stringify(pendingDeletions));
+                        
+                        // Atualizar a UI imediatamente
+                        setTransactions(prevTransactions =>
+                            prevTransactions.filter(transaction => transaction.id !== id)
+                        );
+                    } catch (error) {
+                        console.error('Erro ao salvar exclusão pendente:', error);
+                    }
+                }
                 
-                setTransactions(prevTransactions =>
-                    prevTransactions.filter(transaction => transaction.id !== id)
-                );
                 setLoading(false);
             } catch (err) {
                 setLoading(false);
@@ -100,8 +211,52 @@ export const TransactionProvider: React.FC<{children: ReactNode}> = ({
             }
         };
 
+        // Função para sincronizar dados pendentes quando voltar online
+        const syncPendingData = async () => {
+            if (!isOnline) return;
+            
+            try {
+                // Sincronizar transações pendentes
+                const pendingTransactionsJson = await AsyncStorage.getItem('pendingTransactions');
+                const pendingTransactions = pendingTransactionsJson ? JSON.parse(pendingTransactionsJson) : [];
+                
+                if (pendingTransactions.length > 0) {
+                    for (const transaction of pendingTransactions) {
+                        const { id, pendingSync, ...transactionData } = transaction;
+                        await addDoc(collection(db, 'transactions'), transactionData);
+                    }
+                    await AsyncStorage.setItem('pendingTransactions', '[]');
+                }
+                
+                // Sincronizar exclusões pendentes
+                const pendingDeletionsJson = await AsyncStorage.getItem('pendingDeletions');
+                const pendingDeletions = pendingDeletionsJson ? JSON.parse(pendingDeletionsJson) : [];
+                
+                if (pendingDeletions.length > 0) {
+                    for (const id of pendingDeletions) {
+                        await deleteDoc(doc(db, 'transactions', id));
+                    }
+                    await AsyncStorage.setItem('pendingDeletions', '[]');
+                }
+            } catch (err) {
+                console.error("Erro ao sincronizar dados pendentes:", err);
+            }
+        };
+
+        // Monitorar mudanças no estado da conexão para sincronizar
+        useEffect(() => {
+            if (isOnline) {
+                syncPendingData();
+            }
+        }, [isOnline]);
+
         const refreshTransactions = async () => {
-            await fetchTransactions();
+            // A atualização em tempo real já é tratada pelo listener do Firestore
+            // Esta função é mantida para compatibilidade com a interface existente
+            if (!isOnline) {
+                setError("Você está offline. Os dados podem não estar atualizados.");
+            }
+            return Promise.resolve();
         };
 
         return (
@@ -111,14 +266,15 @@ export const TransactionProvider: React.FC<{children: ReactNode}> = ({
                 deleteTransaction,
                 loading,
                 error,
-                refreshTransactions
+                refreshTransactions,
+                isOnline
             }}>
                 {children}
             </TransactionContext.Provider>
         );
 };
 
-// Create a hook to use the context
+// Hook para usar o contexto
 export const useTransactions = () => {
     const context = useContext(TransactionContext);
     if (context === undefined) {

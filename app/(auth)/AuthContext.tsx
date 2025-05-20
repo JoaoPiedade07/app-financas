@@ -71,7 +71,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUser(mockUser);
         
         // Navegar para a tela principal
-        router.replace('/tabs' as any);
+        router.replace('/tabs/home' as any);
         return true;
       } else {
         setError('Email ou senha inválidos');
@@ -108,7 +108,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUser(newUser);
         
         // Navegar para a tela principal
-        router.replace('/tabs' as any);
+        router.replace('/tabs/home' as any);
         return true;
       } else {
         setError('Preencha todos os campos');
@@ -148,3 +148,5 @@ export const useAuth = () => {
   }
   return context;
 };
+
+export default AuthContext;

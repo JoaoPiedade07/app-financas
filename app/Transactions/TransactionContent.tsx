@@ -139,8 +139,20 @@ export const TransactionProvider: React.FC<{children: ReactNode}> = ({
                 setLoading(true);
                 setError(null);
                 
+                // Obter o ID do usuário atual
+                const userJson = await AsyncStorage.getItem('user');
+                const userData = userJson ? JSON.parse(userJson) : null;
+                const userId = userData?.id;
+                
+                if (!userId) {
+                    setError('Usuário não autenticado');
+                    setLoading(false);
+                    return;
+                }
+                
                 const newTransaction = {
                     ...transaction,
+                    userId, // Adicionar o ID do usuário à transação
                     category: transaction.category || 'Other',
                     iconColor: transaction.type === 'Recepies' ? '#4CAF50' : '#F44336',
                     iconName: transaction.type === 'Recepies'? 'arrow-up-outline' : 'arrow-down-outline',

@@ -11,21 +11,40 @@ import {
   Platform,
   ScrollView
 } from 'react-native';
-import { useAuth } from '@/app/auth/AuthContext';
-import { Link } from 'expo-router';
+import { useAuth } from '@/app/(auth)/AuthContext';
+import { Link, router } from 'expo-router';
 import { ThemedView } from '@/components/ThemedView';
 import { useTheme } from '@/components/ThemeContext';
 
-export default function Login() {
+export default function Register() {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { signIn, isLoading, error } = useAuth();
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [localError, setLocalError] = useState<string | null>(null);
+  
+  const { signUp, isLoading, error } = useAuth();
   const { theme } = useTheme();
   
   const isDark = theme === 'dark';
   
-  const handleLogin = async () => {
-    await signIn(email, password);
+  const handleRegister = async () => {
+    // Validações básicas
+    if (!name || !email || !password || !confirmPassword) {
+      setLocalError('Preencha todos os campos');
+      return;
+    }
+    
+    if (password !== confirmPassword) {
+      setLocalError('As senhas não coincidem');
+      return;
+    }
+    
+    // Limpar erro local
+    setLocalError(null);
+    
+    // Chamar função de cadastro
+    await signUp(name, email, password);
   };
 
   return (
@@ -38,6 +57,13 @@ export default function Login() {
           contentContainerStyle={styles.scrollContainer}
           keyboardShouldPersistTaps="handled"
         >
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <Text style={[styles.backButtonText, isDark && styles.textDark]}>← Voltar</Text>
+          </TouchableOpacity>
+          
           <View style={styles.logoContainer}>
             <Image 
               source={require('@/assets/images/logo.png')} 
@@ -48,13 +74,21 @@ export default function Login() {
           </View>
           
           <View style={styles.formContainer}>
-            <Text style={[styles.title, isDark && styles.textDark]}>Login</Text>
+            <Text style={[styles.title, isDark && styles.textDark]}>Criar Conta</Text>
             
-            {error && (
+            {(localError || error) && (
               <View style={styles.errorContainer}>
-                <Text style={styles.errorText}>{error}</Text>
+                <Text style={styles.errorText}>{localError || error}</Text>
               </View>
             )}
+            
+            <TextInput
+              style={[styles.input, isDark && styles.inputDark]}
+              placeholder="Nome completo"
+              placeholderTextColor={isDark ? '#9BA1A6' : '#687076'}
+              value={name}
+              onChangeText={setName}
+            />
             
             <TextInput
               style={[styles.input, isDark && styles.inputDark]}
@@ -75,27 +109,36 @@ export default function Login() {
               secureTextEntry
             />
             
+            <TextInput
+              style={[styles.input, isDark && styles.inputDark]}
+              placeholder="Confirmar senha"
+              placeholderTextColor={isDark ? '#9BA1A6' : '#687076'}
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              secureTextEntry
+            />
+            
             <TouchableOpacity 
-              style={styles.loginButton}
-              onPress={handleLogin}
+              style={styles.registerButton}
+              onPress={handleRegister}
               disabled={isLoading}
             >
               {isLoading ? (
                 <ActivityIndicator color="#fff" />
               ) : (
-                <Text style={styles.loginButtonText}>Entrar</Text>
+                <Text style={styles.registerButtonText}>Cadastrar</Text>
               )}
             </TouchableOpacity>
             
-            <View style={styles.registerContainer}>
-              <Text style={[styles.registerText, isDark && styles.textDark]}>
-                Não tem uma conta?
+            <View style={styles.loginContainer}>
+              <Text style={[styles.loginText, isDark && styles.textDark]}>
+                Já tem uma conta?
               </Text>
-              <Link href="/(auth)/register" asChild>
+              <Link href="/login" asChild>
                 <TouchableOpacity>
-                  <Text style={styles.registerLink}>Cadastre-se</Text>
+                  <Text style={styles.loginLink}>Faça login</Text>
                 </TouchableOpacity>
-              </Link>
+              </Link>*
             </View>
           </View>
         </ScrollView>
@@ -116,18 +159,30 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     width: '100%',
+    paddingTop: 40,
+    paddingBottom: 20,
+  },
+  backButton: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+    padding: 10,
+  },
+  backButtonText: {
+    fontSize: 16,
+    color: '#0a7ea4',
   },
   logoContainer: {
     alignItems: 'center',
-    marginBottom: 40,
+    marginBottom: 30,
   },
   logo: {
-    width: 100,
-    height: 100,
+    width: 80,
+    height: 80,
     marginBottom: 10,
   },
   appName: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: 'bold',
     color: '#0a7ea4',
   },
@@ -157,28 +212,28 @@ const styles = StyleSheet.create({
     borderColor: '#3E4042',
     color: '#ECEDEE',
   },
-  loginButton: {
+  registerButton: {
     backgroundColor: '#0a7ea4',
     borderRadius: 8,
     padding: 15,
     alignItems: 'center',
     marginTop: 10,
   },
-  loginButtonText: {
+  registerButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
   },
-  registerContainer: {
+  loginContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     marginTop: 20,
   },
-  registerText: {
+  loginText: {
     color: '#11181C',
     marginRight: 5,
   },
-  registerLink: {
+  loginLink: {
     color: '#0a7ea4',
     fontWeight: 'bold',
   },

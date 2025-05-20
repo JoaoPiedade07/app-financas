@@ -11,40 +11,21 @@ import {
   Platform,
   ScrollView
 } from 'react-native';
-import { useAuth } from '@/app/auth/AuthContext';
-import { Link, router } from 'expo-router';
+import { useAuth } from '@/app/(auth)/AuthContext';
+import { Link } from 'expo-router';
 import { ThemedView } from '@/components/ThemedView';
 import { useTheme } from '@/components/ThemeContext';
 
-export default function Register() {
-  const [name, setName] = useState('');
+export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [localError, setLocalError] = useState<string | null>(null);
-  
-  const { signUp, isLoading, error } = useAuth();
+  const { signIn, isLoading, error } = useAuth();
   const { theme } = useTheme();
   
   const isDark = theme === 'dark';
   
-  const handleRegister = async () => {
-    // Validações básicas
-    if (!name || !email || !password || !confirmPassword) {
-      setLocalError('Preencha todos os campos');
-      return;
-    }
-    
-    if (password !== confirmPassword) {
-      setLocalError('As senhas não coincidem');
-      return;
-    }
-    
-    // Limpar erro local
-    setLocalError(null);
-    
-    // Chamar função de cadastro
-    await signUp(name, email, password);
+  const handleLogin = async () => {
+    await signIn(email, password);
   };
 
   return (
@@ -57,13 +38,6 @@ export default function Register() {
           contentContainerStyle={styles.scrollContainer}
           keyboardShouldPersistTaps="handled"
         >
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
-            <Text style={[styles.backButtonText, isDark && styles.textDark]}>← Voltar</Text>
-          </TouchableOpacity>
-          
           <View style={styles.logoContainer}>
             <Image 
               source={require('@/assets/images/logo.png')} 
@@ -74,21 +48,13 @@ export default function Register() {
           </View>
           
           <View style={styles.formContainer}>
-            <Text style={[styles.title, isDark && styles.textDark]}>Criar Conta</Text>
+            <Text style={[styles.title, isDark && styles.textDark]}>Login</Text>
             
-            {(localError || error) && (
+            {error && (
               <View style={styles.errorContainer}>
-                <Text style={styles.errorText}>{localError || error}</Text>
+                <Text style={styles.errorText}>{error}</Text>
               </View>
             )}
-            
-            <TextInput
-              style={[styles.input, isDark && styles.inputDark]}
-              placeholder="Nome completo"
-              placeholderTextColor={isDark ? '#9BA1A6' : '#687076'}
-              value={name}
-              onChangeText={setName}
-            />
             
             <TextInput
               style={[styles.input, isDark && styles.inputDark]}
@@ -109,34 +75,25 @@ export default function Register() {
               secureTextEntry
             />
             
-            <TextInput
-              style={[styles.input, isDark && styles.inputDark]}
-              placeholder="Confirmar senha"
-              placeholderTextColor={isDark ? '#9BA1A6' : '#687076'}
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              secureTextEntry
-            />
-            
             <TouchableOpacity 
-              style={styles.registerButton}
-              onPress={handleRegister}
+              style={styles.loginButton}
+              onPress={handleLogin}
               disabled={isLoading}
             >
               {isLoading ? (
                 <ActivityIndicator color="#fff" />
               ) : (
-                <Text style={styles.registerButtonText}>Cadastrar</Text>
+                <Text style={styles.loginButtonText}>Entrar</Text>
               )}
             </TouchableOpacity>
             
-            <View style={styles.loginContainer}>
-              <Text style={[styles.loginText, isDark && styles.textDark]}>
-                Já tem uma conta?
+            <View style={styles.registerContainer}>
+              <Text style={[styles.registerText, isDark && styles.textDark]}>
+                Não tem uma conta?
               </Text>
-              <Link href="/(auth)/login" asChild>
+              <Link href="/register" asChild>
                 <TouchableOpacity>
-                  <Text style={styles.loginLink}>Faça login</Text>
+                  <Text style={styles.registerLink}>Cadastre-se</Text>
                 </TouchableOpacity>
               </Link>
             </View>
@@ -159,30 +116,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     width: '100%',
-    paddingTop: 40,
-    paddingBottom: 20,
-  },
-  backButton: {
-    position: 'absolute',
-    top: 10,
-    left: 10,
-    padding: 10,
-  },
-  backButtonText: {
-    fontSize: 16,
-    color: '#0a7ea4',
   },
   logoContainer: {
     alignItems: 'center',
-    marginBottom: 30,
+    marginBottom: 40,
   },
   logo: {
-    width: 80,
-    height: 80,
+    width: 100,
+    height: 100,
     marginBottom: 10,
   },
   appName: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#0a7ea4',
   },
@@ -212,28 +157,28 @@ const styles = StyleSheet.create({
     borderColor: '#3E4042',
     color: '#ECEDEE',
   },
-  registerButton: {
+  loginButton: {
     backgroundColor: '#0a7ea4',
     borderRadius: 8,
     padding: 15,
     alignItems: 'center',
     marginTop: 10,
   },
-  registerButtonText: {
+  loginButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
   },
-  loginContainer: {
+  registerContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     marginTop: 20,
   },
-  loginText: {
+  registerText: {
     color: '#11181C',
     marginRight: 5,
   },
-  loginLink: {
+  registerLink: {
     color: '#0a7ea4',
     fontWeight: 'bold',
   },
@@ -251,3 +196,4 @@ const styles = StyleSheet.create({
     color: '#ECEDEE',
   },
 });
+

@@ -1,15 +1,24 @@
 import { Redirect } from 'expo-router';
-import { ThemeProvider } from '@/components/ThemeContext';
+import { useAuth } from './(auth)/AuthContext';
+import { View, ActivityIndicator } from 'react-native';
 
-const StartPage = () => {
-
-
+export default function Index() {
+  const { user, isLoading } = useAuth();
+  
+  // Mostrar um indicador de carregamento enquanto verifica a autenticação
+  if (isLoading) {
     return (
-        <ThemeProvider>
-                    <Redirect href = "/home" />
-        </ThemeProvider>
-    )
-};
-
-export default StartPage;
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#0a7ea4" />
+      </View>
+    );
+  }
+  
+  // Redirecionar com base no estado de autenticação
+  if (user) {
+    return <Redirect href="/(tabs)/home" />;
+  } else {
+    return <Redirect href="/(signup)/login" />;
+  }
+}
 

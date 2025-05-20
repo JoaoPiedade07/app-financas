@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import TabBarButton from './TabBarButton';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 
-export function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
+export default function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
     const [dimensions, setDimensions] = useState({ height: 50, width: 100 });
 
     const buttonWidth = dimensions.width / state.routes.length;

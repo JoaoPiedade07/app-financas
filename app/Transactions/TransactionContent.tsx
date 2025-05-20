@@ -1,6 +1,6 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect } from "react";
-import { handleApiError } from "../utils/apiErrorHandler";
-import { db } from "@/app/Firebase/firebase";
+import { handleApiError } from "@/utils/apiErrorHandler";
+import { db } from "@/utils/Firebase/firebase";
 import { 
   collection, 
   addDoc, 

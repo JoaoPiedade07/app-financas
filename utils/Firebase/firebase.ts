@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 //import { getAnalytics } from "firebase/analytics";
-import { getFirestore, enableIndexedDbPersistence } from 'firebase/firestore';
+import { initializeFirestore, persistentLocalCache, persistentSingleTabManager }  from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 
 // Configuração do Firebase
@@ -17,18 +17,14 @@ const firebaseConfig = {
 
 // Inicializar Firebase
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+
+// Inicializar Firestore com persistência de cache
+const db = initializeFirestore(app, {
+  localCache: persistentLocalCache({
+    tabManager: persistentSingleTabManager(undefined)
+  })
+});
+
 const auth = getAuth(app);
-//const analytics = getAnalytics(app);
 
-// Habilitar persistência offline
-enableIndexedDbPersistence(db)
-  .catch((err) => {
-    if (err.code === 'failed-precondition') {
-      console.log('Persistência falhou, múltiplas abas abertas ao mesmo tempo.');
-    } else if (err.code === 'unimplemented') {
-      console.log('O navegador atual não suporta todos os recursos necessários para persistência.');
-    }
-  });
-
-export { app, db, auth};
+export { app, db, auth };

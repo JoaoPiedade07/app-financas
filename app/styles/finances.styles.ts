@@ -84,10 +84,7 @@ export const financesStyles = StyleSheet.create({
         alignItems: 'center',
         backgroundColor: '#007bff',
         elevation: 8,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.3,
-        shadowRadius: 4,
+        boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.3)',
     },
 
     buttonText: {
@@ -233,10 +230,7 @@ export const financesStyles = StyleSheet.create({
 
     switcherButtonActive: {
         backgroundColor: "#fff",
-        shadowColor: "#000",
-        shadowOffset: { width: 1, height: 1 }, // Sombras laterais
-        shadowOpacity: 0.2,
-        shadowRadius: 4,
+        boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.3)',
         elevation: 4, // Para Android
     },   
 
@@ -320,10 +314,7 @@ export const financesStyles = StyleSheet.create({
         borderRadius: 8,
         elevation: 10,
         padding: 5,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.3,
-        shadowRadius: 4,
+        boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.3)',
         minWidth: 120, // 🔹 Define um tamanho mínimo
         maxWidth: 200, // 🔹 Define um tamanho máximo para não esticar demais
     },
@@ -342,10 +333,7 @@ export const financesStyles = StyleSheet.create({
         height: 150,
         backgroundColor: '#fff', 
         borderRadius: 20,
-        shadowColor: "#000",
-        shadowOffset: { width: 1, height: 1 }, // Sombras laterais
-        shadowOpacity: 0.2,
-        shadowRadius: 4,
+        boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.3)',
         elevation: 4, // Para Android
         padding: 15,
         justifyContent: 'space-between',

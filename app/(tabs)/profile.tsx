@@ -1,17 +1,19 @@
 import React, { useState, useRef } from 'react';
-import { Text, View, TouchableOpacity, Modal, Pressable, Animated, ScrollView } from 'react-native';
+import { Text, View, TouchableOpacity, Modal, Pressable, Animated, ScrollView, Alert } from 'react-native';
 import { Card } from "react-native-paper";
 import { Ionicons } from '@expo/vector-icons';
 import { Link } from 'expo-router';
 import { useLanguage } from '../Languages/LanguageContente';
 import { useTheme } from '@/components/ThemeContext';
-import { profileStyles as styles} from '@/app/styles/profile.styles'
+import { profileStyles as styles} from '@/app/styles/profile.styles';
+import { useAuth } from '@/app/(auth)/AuthContext';
 
  
 const Profile = () => {
     // Current language state (default to English)
     const {currentLanguage, setCurrentLanguage, getText} = useLanguage();
     const { theme, toggleTheme } = useTheme();
+    const { signOut } = useAuth();
     const switchAnim = useRef(new Animated.Value(theme === 'dark' ? 1 : 0)).current;
 
     function handleToggleTheme() {
@@ -42,6 +44,17 @@ const Profile = () => {
     const changeLanguage = (langCode: string) => {
         setCurrentLanguage(langCode);
         setShowLanguageDropdown(false);
+    };
+
+    // Função para confirmar logout
+    // Função para fazer logout diretamente
+    const handleLogout = async () => {
+        try {
+            await signOut();
+            console.log('Logout realizado com sucesso');
+        } catch (error) {
+            console.error('Erro ao fazer logout:', error);
+        }
     };
 
     return (
@@ -144,6 +157,23 @@ const Profile = () => {
                         <Text style={styles.versionText}>1.0.0</Text>
                     </View>
                 </Card.Content>
+            </Card>
+
+            {/* Logout Section */}
+            <Text style={styles.sectionTitle}>{getText('account')}</Text>
+            <Card style={styles.card}>
+                <TouchableOpacity onPress={handleLogout}>
+                    <Card.Content>
+                        <View style={styles.transactionRow}>
+                            <View style={styles.transactionInfo}>
+                                <View style={[styles.iconContainerWeak, { backgroundColor: '#F44336' }]}>
+                                    <Ionicons name="log-out-outline" size={18} color="white" />
+                                </View>
+                                <Text style={[styles.transactionName, { color: '#F44336' }]}>{getText('logout')}</Text>
+                            </View>
+                        </View>
+                    </Card.Content>
+                </TouchableOpacity>
             </Card>
 
             {/* Language Dropdown Modal */}

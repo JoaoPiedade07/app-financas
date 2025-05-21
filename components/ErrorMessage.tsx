@@ -10,11 +10,11 @@ interface ErrorMessageProps {
 const ErrorMessage = ({ message, onRetry }: ErrorMessageProps) => {
   return (
     <View style={styles.container}>
-      <Ionicons name="alert-circle-outline" size={40} color="#F44336" />
-      <Text style={styles.errorText}>{message}</Text>
+      <Ionicons name="alert-circle-outline" size={50} color="#D32F2F" />
+      <Text style={styles.message}>{message}</Text>
       {onRetry && (
         <TouchableOpacity style={styles.retryButton} onPress={onRetry}>
-          <Text style={styles.retryText}>Retry</Text>
+          <Text style={styles.retryText}>Tentar novamente</Text>
         </TouchableOpacity>
       )}
     </View>
@@ -23,24 +23,24 @@ const ErrorMessage = ({ message, onRetry }: ErrorMessageProps) => {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 16,
+    padding: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: '#FFEBEE',
     borderRadius: 8,
-    alignItems: 'center',
     margin: 10,
   },
-  errorText: {
+  message: {
     color: '#D32F2F',
     fontSize: 16,
     textAlign: 'center',
-    marginVertical: 8,
+    marginTop: 10,
   },
   retryButton: {
-    backgroundColor: '#F44336',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 4,
-    marginTop: 8,
+    marginTop: 15,
+    padding: 10,
+    backgroundColor: '#D32F2F',
+    borderRadius: 5,
   },
   retryText: {
     color: 'white',

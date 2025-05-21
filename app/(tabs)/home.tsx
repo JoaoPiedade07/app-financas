@@ -8,10 +8,19 @@ import { useTransactions } from '../Transactions/TransactionContent';
 import { useLanguage } from '../Languages/LanguageContente';
 import ErrorMessage from '@/components/ErrorMessage';
 import { homeStyles as styles} from '@/app/styles/home.styles';
+import { useAuth } from '@/app/(auth)/AuthContext';
 
 const screenWidth = Dimensions.get("window").width;
 
 const Home = () => {
+
+    const { getCurrentUser } = useAuth();
+
+    // Em alguma função assíncrona
+    const checkUser = async () => {
+    const firebaseUser = await getCurrentUser();
+    // Faça algo com o usuário do Firebase
+    };
 
     const { getText } = useLanguage();
     const { transactions, loading, error, refreshTransactions, isOnline } = useTransactions();

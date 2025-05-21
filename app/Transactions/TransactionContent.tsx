@@ -13,6 +13,7 @@ import {
 } from "firebase/firestore";
 import NetInfo from '@react-native-community/netinfo';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuth } from "@/app/(auth)/AuthContext";
 
 export interface Transaction {
     id: string | number;
@@ -44,6 +45,7 @@ export const TransactionProvider: React.FC<{children: ReactNode}> = ({
         const [loading, setLoading] = useState(false);
         const [error, setError] = useState<string | null>(null);
         const [isOnline, setIsOnline] = useState(true);
+        const { isAuthenticated } = useAuth();
 
         // Monitorar o estado da conexão
         useEffect(() => {
@@ -57,6 +59,12 @@ export const TransactionProvider: React.FC<{children: ReactNode}> = ({
         // Função para buscar transações do Firestore
         const fetchTransactions = async () => {
             try {
+                // Não buscar dados se o usuário não estiver autenticado
+                if (!isAuthenticated) {
+                    console.log("Usuário não autenticado, não buscando transações");
+                    return () => {};
+                }
+                
                 setLoading(true);
                 setError(null);
                 
@@ -65,12 +73,34 @@ export const TransactionProvider: React.FC<{children: ReactNode}> = ({
                 if (!netInfo.isConnected) {
                     setIsOnline(false);
                     setLoading(false);
+                    
+                    // Tentar carregar dados do cache local
+                    try {
+                        const cachedTransactions = await AsyncStorage.getItem('cachedTransactions');
+                        if (cachedTransactions) {
+                            setTransactions(JSON.parse(cachedTransactions));
+                        }
+                    } catch (cacheError) {
+                        console.error("Erro ao carregar do cache:", cacheError);
+                    }
+                    
                     setError("Sem conexão com a internet");
                     return () => {};
                 }
                 
-                // Criar uma referência à coleção de transações
-                const transactionsRef = collection(db, 'transactions');
+                // Obter o ID do usuário atual
+                const userJson = await AsyncStorage.getItem('user');
+                const userData = userJson ? JSON.parse(userJson) : null;
+                const userId = userData?.id;
+                
+                if (!userId) {
+                    setError('Usuário não autenticado');
+                    setLoading(false);
+                    return () => {};
+                }
+                
+                // Criar uma referência à subcoleção de transações do usuário
+                const transactionsRef = collection(db, 'users', userId, 'transactions');
                 const q = query(transactionsRef, orderBy('date', 'desc'));
                 
                 // Configurar um listener com timeout
@@ -100,6 +130,11 @@ export const TransactionProvider: React.FC<{children: ReactNode}> = ({
                         });
                     });
                     setTransactions(transactionsData);
+                    
+                    // Armazenar no cache local para acesso offline
+                    AsyncStorage.setItem('cachedTransactions', JSON.stringify(transactionsData))
+                        .catch(err => console.error("Erro ao salvar no cache:", err));
+                        
                     setLoading(false);
                 }, (err) => {
                     clearTimeout(timeoutId);
@@ -120,19 +155,21 @@ export const TransactionProvider: React.FC<{children: ReactNode}> = ({
             }
         };
 
-        // Inicializar o listener
+        // Inicializar o listener apenas quando o usuário estiver autenticado
         useEffect(() => {
-            const unsubscribePromise = fetchTransactions();
-            
-            return () => {
-                // Usar Promise.resolve para garantir que temos uma Promise
-                Promise.resolve(unsubscribePromise).then(unsubscribe => {
-                    if (typeof unsubscribe === 'function') {
-                        unsubscribe();
-                    }
-                });
-            };
-        }, []);
+            if (isAuthenticated) {
+                const unsubscribePromise = fetchTransactions();
+                
+                return () => {
+                    // Usar Promise.resolve para garantir que temos uma Promise
+                    Promise.resolve(unsubscribePromise).then(unsubscribe => {
+                        if (typeof unsubscribe === 'function') {
+                            unsubscribe();
+                        }
+                    });
+                };
+            }
+        }, [isAuthenticated]);
 
         const addTransaction = async (transaction: Omit<Transaction, 'id' | 'iconColor' | 'iconName'>) => {
             try {
@@ -152,16 +189,15 @@ export const TransactionProvider: React.FC<{children: ReactNode}> = ({
                 
                 const newTransaction = {
                     ...transaction,
-                    userId, // Adicionar o ID do usuário à transação
                     category: transaction.category || 'Other',
                     iconColor: transaction.type === 'Recepies' ? '#4CAF50' : '#F44336',
                     iconName: transaction.type === 'Recepies'? 'arrow-up-outline' : 'arrow-down-outline',
                     createdAt: new Date().toISOString()
                 };
     
-                // Adicionar ao Firestore
+                // Adicionar ao Firestore como subcoleção do usuário
                 if (isOnline) {
-                    await addDoc(collection(db, 'transactions'), newTransaction);
+                    await addDoc(collection(db, 'users', userId, 'transactions'), newTransaction);
                 } else {
                     // Armazenar localmente para sincronização posterior
                     const localTransaction = {
@@ -177,7 +213,7 @@ export const TransactionProvider: React.FC<{children: ReactNode}> = ({
                     try {
                         const pendingTransactionsJson = await AsyncStorage.getItem('pendingTransactions');
                         const pendingTransactions = pendingTransactionsJson ? JSON.parse(pendingTransactionsJson) : [];
-                        pendingTransactions.push(localTransaction);
+                        pendingTransactions.push({...localTransaction, userId});
                         await AsyncStorage.setItem('pendingTransactions', JSON.stringify(pendingTransactions));
                     } catch (error) {
                         console.error('Erro ao salvar transação pendente:', error);
@@ -196,15 +232,26 @@ export const TransactionProvider: React.FC<{children: ReactNode}> = ({
                 setLoading(true);
                 setError(null);
                 
+                // Obter o ID do usuário atual
+                const userJson = await AsyncStorage.getItem('user');
+                const userData = userJson ? JSON.parse(userJson) : null;
+                const userId = userData?.id;
+                
+                if (!userId) {
+                    setError('Usuário não autenticado');
+                    setLoading(false);
+                    return;
+                }
+                
                 if (isOnline) {
-                    // Excluir do Firestore
-                    await deleteDoc(doc(db, 'transactions', id.toString()));
+                    // Excluir da subcoleção do usuário
+                    await deleteDoc(doc(db, 'users', userId, 'transactions', id.toString()));
                 } else {
                     // Marcar para exclusão quando online
                     try {
                         const pendingDeletionsJson = await AsyncStorage.getItem('pendingDeletions');
                         const pendingDeletions = pendingDeletionsJson ? JSON.parse(pendingDeletionsJson) : [];
-                        pendingDeletions.push(id.toString());
+                        pendingDeletions.push({id: id.toString(), userId});
                         await AsyncStorage.setItem('pendingDeletions', JSON.stringify(pendingDeletions));
                         
                         // Atualizar a UI imediatamente
@@ -228,6 +275,16 @@ export const TransactionProvider: React.FC<{children: ReactNode}> = ({
             if (!isOnline) return;
             
             try {
+                // Obter o ID do usuário atual
+                const userJson = await AsyncStorage.getItem('user');
+                const userData = userJson ? JSON.parse(userJson) : null;
+                const userId = userData?.id;
+                
+                if (!userId) {
+                    console.error('Usuário não autenticado, não é possível sincronizar');
+                    return;
+                }
+                
                 // Sincronizar transações pendentes
                 const pendingTransactionsJson = await AsyncStorage.getItem('pendingTransactions');
                 const pendingTransactions = pendingTransactionsJson ? JSON.parse(pendingTransactionsJson) : [];
@@ -235,7 +292,7 @@ export const TransactionProvider: React.FC<{children: ReactNode}> = ({
                 if (pendingTransactions.length > 0) {
                     for (const transaction of pendingTransactions) {
                         const { id, pendingSync, ...transactionData } = transaction;
-                        await addDoc(collection(db, 'transactions'), transactionData);
+                        await addDoc(collection(db, 'users', userId, 'transactions'), transactionData);
                     }
                     await AsyncStorage.setItem('pendingTransactions', '[]');
                 }
@@ -245,8 +302,8 @@ export const TransactionProvider: React.FC<{children: ReactNode}> = ({
                 const pendingDeletions = pendingDeletionsJson ? JSON.parse(pendingDeletionsJson) : [];
                 
                 if (pendingDeletions.length > 0) {
-                    for (const id of pendingDeletions) {
-                        await deleteDoc(doc(db, 'transactions', id));
+                    for (const deletion of pendingDeletions) {
+                        await deleteDoc(doc(db, 'users', deletion.userId, 'transactions', deletion.id));
                     }
                     await AsyncStorage.setItem('pendingDeletions', '[]');
                 }

@@ -1,7 +1,7 @@
 import { initializeApp } from 'firebase/app';
 //import { getAnalytics } from "firebase/analytics";
 import { initializeFirestore, persistentLocalCache, persistentSingleTabManager }  from 'firebase/firestore';
-import { getAuth } from 'firebase/auth';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
 
 // Configuração do Firebase
 const firebaseConfig = {
@@ -27,4 +27,18 @@ const db = initializeFirestore(app, {
 
 const auth = getAuth(app);
 
-export { app, db, auth };
+// Função auxiliar para verificar o estado de autenticação atual
+const getCurrentUser = () => {
+  return new Promise((resolve, reject) => {
+    const unsubscribe = onAuthStateChanged(
+      auth,
+      (user) => {
+        unsubscribe();
+        resolve(user);
+      },
+      reject
+    );
+  });
+};
+
+export { app, db, auth, getCurrentUser };

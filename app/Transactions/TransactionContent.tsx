@@ -101,7 +101,7 @@ export const TransactionProvider: React.FC<{children: ReactNode}> = ({
                 
                 // Criar uma referência à subcoleção de transações do usuário
                 const transactionsRef = collection(db, 'users', userId, 'transactions');
-                const q = query(transactionsRef, orderBy('date', 'desc'));
+                const q = query(transactionsRef, orderBy('createdAt', 'desc'));
                 
                 // Configurar um listener com timeout
                 let timeoutId: NodeJS.Timeout;

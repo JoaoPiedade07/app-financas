@@ -88,11 +88,13 @@ const Home = () => {
             'Recepies' ? '#4CAF50' : '#F44336'),
         iconName: transaction.iconName || (transaction.type ===
             'Recepies' ? 'arrow-up-outline' : 'arrow-down-outline'),
-        
+        isUpcomingBill: transaction.isUpcomingBill || false,
     }));
 
     // Filtrar transações que são "upcoming bills"
-    const upcomingBills = formattedTransactions.filter(transaction => transaction.type === 'upcoming Bills');
+    const upcomingBills = formattedTransactions.filter(transaction => 
+        transaction.isUpcomingBill === true
+    );
 
     return (
         <View style={styles.screen}>

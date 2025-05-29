@@ -1,10 +1,15 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { Text, View, TouchableOpacity, ScrollView, Modal, TextInput, Dimensions, FlatList, RefreshControl, ActivityIndicator } from 'react-native';
+import { Text, View, TouchableOpacity, ScrollView, Modal, TextInput, Dimensions, FlatList, RefreshControl, ActivityIndicator, Platform } from 'react-native';
 import { Calendar, DateData } from 'react-native-calendars';
 import { BarChart } from '@mui/x-charts/BarChart';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import { GestureDetector, Gesture } from 'react-native-gesture-handler';
+import Animated, { 
+    useAnimatedStyle, 
+    useSharedValue, 
+    withTiming, 
+    runOnJS
+} from 'react-native-reanimated';
 import { useTransactions } from '../Transactions/TransactionContent';
 import { useLanguage } from '../Languages/LanguageContente';
 import ErrorMessage from '@/components/ErrorMessage';
@@ -81,7 +86,7 @@ const Finances = () => {
     const createSwipeGesture = useCallback((transactionId: string) => {
         return Gesture.Pan()
             .onBegin(() => {
-                handleSwipeStart(transactionId);
+                runOnJS(handleSwipeStart)(transactionId);
                 deleteOpacity.value = 0;
                 deleteWidth.value = 0;
             })
@@ -93,7 +98,7 @@ const Finances = () => {
                 }
             })
             .onEnd((event) => {
-                if (event.translationX < -40) { // Reduced threshold for better UX
+                if (event.translationX < -40) {
                     swipeX.value = withTiming(-80, { duration: 300 });
                     deleteWidth.value = withTiming(80, { duration: 300 });
                     deleteOpacity.value = withTiming(1, { duration: 300 });
@@ -101,12 +106,10 @@ const Finances = () => {
                     swipeX.value = withTiming(0, { duration: 300 });
                     deleteWidth.value = withTiming(0, { duration: 300 });
                     deleteOpacity.value = withTiming(0, { duration: 300 });
-                    setTimeout(() => {
-                        setSwipedTransactionId(null);
-                    }, 300);
+                    runOnJS(setSwipedTransactionId)(null);
                 }
             });
-        }, [handleSwipeStart]);
+    }, [handleSwipeStart]);
 
     const deleteButtonStyle = useAnimatedStyle(() => {
         return {
@@ -182,32 +185,42 @@ const Finances = () => {
         };
     
     const gesture = Gesture.Pan()
-    .onStart(() => {
-
-    })
-    .onUpdate((event) => {
-        if (event.translationY > 0) {
-            translateY.value = event.translationY; // Move o modal para baixo
-        }
-    })
-    .onEnd((event) => {
-        if (event.translationY > screenHeight * 0.3) {
-            // Fecha o modal se o usuário arrastar mais de 30% da tela
-            translateY.value = withTiming(screenHeight, { duration: 300 });
-            isModalOpen.value = false;
-            setTimeout(() =>  {
-                if (modalVisible) setModalVisible(false);
-                if (modalVisibleDelete) setModalVisibleDelete(false);
-            }, 300); // Fecha o modal após a animação
-        } else {
-            // Volta ao topo se o usuário não arrastar o suficiente
-            translateY.value = withTiming(0, { duration: 300 });
-        }
-    });
+        .onBegin(() => {
+            translateY.value = 0;
+        })
+        .onUpdate((event) => {
+            if (event.translationY > 0) { // Só permite arrastar para baixo
+                translateY.value = event.translationY;
+            }
+        })
+        .onEnd((event) => {
+            if (event.translationY > 100) { // Se arrastar mais de 100 pixels, fecha o modal
+                translateY.value = withTiming(screenHeight, { duration: 300 });
+                isModalOpen.value = false;
+                runOnJS(() => {
+                    if (modalVisible) setModalVisible(false);
+                    if (modalVisibleDelete) setModalVisibleDelete(false);
+                })();
+            } else {
+                // Se não arrastar o suficiente, volta ao topo
+                translateY.value = withTiming(0, { duration: 300 });
+            }
+        });
     
     const animatedStyle = useAnimatedStyle(() => {
         return {
             transform: [{ translateY: translateY.value }],
+            backgroundColor: 'white',
+            borderTopLeftRadius: 20,
+            borderTopRightRadius: 20,
+            shadowColor: "#000",
+            shadowOffset: {
+                width: 0,
+                height: -2,
+            },
+            shadowOpacity: 0.25,
+            shadowRadius: 3.84,
+            elevation: 5,
         };
     });
 
@@ -228,6 +241,26 @@ const Finances = () => {
             // Show error message but keep modal open
             alert(err.message || getText('errorDeletingTransaction'));
         }
+    };
+
+    const renderGestureContent = (content: React.ReactNode) => {
+        if (Platform.OS === 'web') {
+            return (
+                <Animated.View style={[styles.modalContent, animatedStyle]}>
+                    <View style={styles.dragIndicator} />
+                    {content}
+                </Animated.View>
+            );
+        }
+        
+        return (
+            <GestureDetector gesture={gesture}>
+                <Animated.View style={[styles.modalContent, animatedStyle]}>
+                    <View style={styles.dragIndicator} />
+                    {content}
+                </Animated.View>
+            </GestureDetector>
+        );
     };
 
     return (
@@ -312,17 +345,14 @@ const Finances = () => {
 
             <Modal visible={modalVisibleDelete} animationType='none' transparent={true}>
                 <View style={styles.modalContainer}>
-                    <GestureDetector gesture={gesture}>
-                        <Animated.View style={[styles.modalContent, animatedStyle]}>
+                    {renderGestureContent(
+                        <>
                             <View style={styles.dragIndicator}/>
-
-                            <Text style={styles.modalTitle}>{getText ('deleteTransaction')}</Text>
+                            <Text style={styles.modalTitle}>{getText('deleteTransaction')}</Text>
                             {transactions.map((transaction) => (
                             <View key={transaction.id} style={styles.swipeContainer}>
                                 <Animated.View style={[styles.swipeContainerBackground, swipeContainerStyle]} />
-                                <GestureDetector 
-                                    gesture={createSwipeGesture(transaction.id.toString())}
-                                >
+                                <GestureDetector gesture={createSwipeGesture(transaction.id.toString())}>
                                     <Animated.View 
                                         style={[
                                             styles.transactionRow, 
@@ -344,25 +374,25 @@ const Finances = () => {
                                         {transaction.value >= 0 ? `+${transaction.value.toFixed(2)}` : `${transaction.value.toFixed(2)}`}
                                     </Text>
                                     </Animated.View>
-                                    </GestureDetector>
-                                    {swipedTransactionId === transaction.id && (
-                                    <Animated.View style={[styles.deleteButton, deleteButtonStyle]}>
-                                        <TouchableOpacity 
-                                            style={{ width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' }}
-                                            onPress={() => {
-                                                // Set the transaction to delete and show confirmation modal
-                                                setTransactionToDelete(transaction);
-                                                setConfirmDeleteVisible(true);
-                                            }}
-                                        >
-                                            <Ionicons name="trash-outline" size={24} color="white" />
-                                        </TouchableOpacity>
-                                    </Animated.View>
-                                    )}
+                                </GestureDetector>
+                                {swipedTransactionId === transaction.id && (
+                                <Animated.View style={[styles.deleteButton, deleteButtonStyle]}>
+                                    <TouchableOpacity 
+                                        style={{ width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' }}
+                                        onPress={() => {
+                                            // Set the transaction to delete and show confirmation modal
+                                            setTransactionToDelete(transaction);
+                                            setConfirmDeleteVisible(true);
+                                        }}
+                                    >
+                                        <Ionicons name="trash-outline" size={24} color="white" />
+                                    </TouchableOpacity>
+                                </Animated.View>
+                                )}
                         </View>
                         ))}
-                        </Animated.View>
-                    </GestureDetector>
+                        </>
+                    )}
                 </View>
             </Modal>
 
@@ -442,14 +472,11 @@ const Finances = () => {
             {/* Modal para adicionar transação */}
             <Modal visible={modalVisible} animationType="none" transparent={true}>
                 <View style={styles.modalContainer}>
-                    <GestureDetector gesture={gesture}>
-                        <Animated.View style={[styles.modalContent, animatedStyle]}>
-                            {/* Tracinho no topo */}
+                    {renderGestureContent(
+                        <>
                             <View style={styles.dragIndicator} />
-                             {/* Título */}
-                            <Text style={styles.modalTitle}>{getText ('newTransaction')}</Text>
+                            <Text style={styles.modalTitle}>{getText('newTransaction')}</Text>
                             
-                            {/* Error message */}
                             {addTransactionError && (
                                 <View style={styles.errorContainer}>
                                     <Text style={styles.errorText}>{addTransactionError}</Text>
@@ -476,7 +503,6 @@ const Finances = () => {
                                     </TouchableOpacity>
                                     ))}
                             </View>
-                            {/* Campos de entrada */}
                             <TextInput
                                 style={styles.input}
                                 placeholder="Price"
@@ -491,7 +517,6 @@ const Finances = () => {
                                 onChangeText={(text) => setNewTransaction({ ...newTransaction, name: text })}
                             />
 
-                            {/* Categoria */}
                             {selectedType === 'Expenses' && (
                                 <>
                                 <View style={styles.transactionRow}>
@@ -508,7 +533,6 @@ const Finances = () => {
                                         </View>
                                     </TouchableOpacity>
                                 </View>
-                             {/* Dropdown de categorias */}
                              <Modal
                                 animationType="none"
                                 transparent={true}
@@ -543,7 +567,6 @@ const Finances = () => {
                             </>
                             )}
 
-                            {/* Data */}
                             <View style={styles.transactionRow}>
                                 <View style={styles.transactionInfo}>
                                     <View style={[styles.iconContainerWeak, { backgroundColor: '#3357FF' }]}>
@@ -557,8 +580,8 @@ const Finances = () => {
                                     </Text>
                                 </TouchableOpacity>
                             </View>
-                             {/* Calendário */}
-                             <Modal animationType="none" transparent={true} visible={calendarVisible}>
+                            
+                            <Modal animationType="none" transparent={true} visible={calendarVisible}>
                                 <View style={styles.centerView}>
                                     <View style={styles.modalView}>
                                         <View style={styles.calendarContainer}>
@@ -579,11 +602,10 @@ const Finances = () => {
                                 </View>
                             </Modal>
 
-                            {/* Botão "Add" */}
                             <TouchableOpacity
                                 style={[
-                                    styles.addCancelButtons, // Estilo fixo
-                                    { backgroundColor: getButtonColor() }, // Cor dinâmica
+                                    styles.addCancelButtons,
+                                    { backgroundColor: getButtonColor() },
                                 ]}
                                 onPress={handleAddTransaction}
                             >
@@ -591,10 +613,10 @@ const Finances = () => {
                                     {selectedType === 'Recepies' ? '+ Add Recepie' : selectedType === 'Expenses' ? '+ Add Expense' : '+ Upcoming Bill'}
                                 </Text>
                             </TouchableOpacity>
-                        </Animated.View>
-                    </GestureDetector>
+                        </>
+                    )}
                 </View>
-                </Modal>
+            </Modal>
         </View>
     );
 };

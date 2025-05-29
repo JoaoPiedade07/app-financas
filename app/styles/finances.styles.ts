@@ -151,30 +151,23 @@ export const financesStyles = StyleSheet.create({
 
     modalContainer: {
         flex: 1,
-        justifyContent: 'flex-end', 
-        alignItems: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)', 
+        justifyContent: 'flex-end',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
     },
 
     modalContent: {
-        borderTopLeftRadius: 30,
-        borderTopRightRadius: 30,
-        backgroundColor: 'white',
-        position: 'absolute',
-        bottom: 0,
-        width: '100%',
-        height: '60%',
         padding: 20,
+        width: '100%',
+        maxHeight: '90%',
     },
 
     dragIndicator: {
         width: 40,
-        height: 5,
-        backgroundColor: '#ccc',
-        borderRadius: 5,
+        height: 4,
+        backgroundColor: '#E0E0E0',
+        borderRadius: 2,
         alignSelf: 'center',
-        marginTop: -10,
-        marginBottom: 10,
+        marginBottom: 20,
     },
 
     modalTitle: {

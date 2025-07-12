@@ -9,6 +9,7 @@ import { useLanguage } from '../Languages/LanguageContente';
 import ErrorMessage from '@/components/ErrorMessage';
 import { homeStyles as styles} from '@/app/styles/home.styles';
 import { useAuth } from '@/app/(auth)/AuthContext';
+import { useImage } from '@/app/Image/ImageContent';
 
 const screenWidth = Dimensions.get("window").width;
 
@@ -25,6 +26,8 @@ const Home = () => {
     const { getText } = useLanguage();
     const { transactions, loading, error, refreshTransactions, isOnline } = useTransactions();
     const [refreshing, setRefreshing] = useState(false);
+
+    const { currentImage } = useImage();
 
     // Function to handle refresh
     const handleRefresh = async () => {
@@ -129,9 +132,8 @@ const Home = () => {
                         <Text style={{ fontSize: 26, marginLeft: 20, marginTop: 20, }}>{totalBalance.toFixed(2)}€</Text>
                         <Text style={{ fontSize: 18, marginLeft: 20, marginBottom: 15, color: '#333' }}>{getText('earnings')}</Text>
                         <TouchableOpacity style={styles.profileIconContainer}>
-                            <Image 
-                                source={require('@/assets/images/logo.png')} 
-                                style={styles.profileIcon} 
+                            <Image style={styles.profileIcon}
+                                source={currentImage}
                             />
                         </TouchableOpacity>
                         <Card style={styles.card}>

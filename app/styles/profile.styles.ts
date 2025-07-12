@@ -6,11 +6,12 @@ export const profileStyles = StyleSheet.create ({
     container: {
         flex: 1,
         backgroundColor: '#f5f5f5',
+        paddingBottom: 80,
     },
     headerTitle: {
         fontSize: 24,
         fontWeight: 'bold',
-        marginLeft: 15,
+        textAlign: 'center',
         marginTop: 20,
         marginBottom: 10,
         color: '#333',
@@ -18,8 +19,8 @@ export const profileStyles = StyleSheet.create ({
     sectionTitle: {
         fontSize: 18,
         marginLeft: 15,
-        marginTop: 20,
-        marginBottom: 5,
+        marginTop: 10,
+        marginBottom: 0,
         color: '#666',
     },
     card: {
@@ -109,6 +110,21 @@ export const profileStyles = StyleSheet.create ({
     versionText: {
         color: '#666',
         fontSize: 14,
+    },
+    profileIcon: {
+        width: 100,
+        height: 100,
+        borderRadius: 50,
+        alignSelf: 'center',
+        marginTop: 15,
+    },
+    editProfileBtn: {
+        alignSelf: 'center',
+        marginTop: 15,
+        marginBottom: 15,
+        color: '#0066cc',
+        fontSize: 16,
+        fontWeight: 'bold',
     },
 })
 

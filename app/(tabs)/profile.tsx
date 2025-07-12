@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Text, View, TouchableOpacity, Modal, Pressable, Animated, ScrollView, Alert } from 'react-native';
+import { Text, View, TouchableOpacity, Modal, Pressable, Animated, ScrollView, Alert, Image, Button } from 'react-native';
 import { Card } from "react-native-paper";
 import { Ionicons } from '@expo/vector-icons';
 import { Link } from 'expo-router';
@@ -7,11 +7,16 @@ import { useLanguage } from '../Languages/LanguageContente';
 import { useTheme } from '@/components/ThemeContext';
 import { profileStyles as styles} from '@/app/styles/profile.styles';
 import { useAuth } from '@/app/(auth)/AuthContext';
+import { useRouter } from 'expo-router';
+import { useImage } from '@/app/Image/ImageContent';
+import { ImageSourcePropType } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 
  
 const Profile = () => {
     // Current language state (default to English)
     const {currentLanguage, setCurrentLanguage, getText} = useLanguage();
+    const { currentImage, setCurrentImage } = useImage();
     const { theme, toggleTheme } = useTheme();
     const { signOut } = useAuth();
     const switchAnim = useRef(new Animated.Value(theme === 'dark' ? 1 : 0)).current;
@@ -46,6 +51,22 @@ const Profile = () => {
         setShowLanguageDropdown(false);
     };
 
+    const toggleImagePicker = () => {
+        ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ['images'],
+            allowsEditing: true,
+            aspect: [1, 1],
+            quality: 1,
+        }).then(result => {
+            if (!result.canceled) {
+                changeImage(result.assets[0]);
+            }
+        });
+    }
+    const changeImage = (image: ImageSourcePropType) => {
+        setCurrentImage(image);
+    };
+
     // Função para confirmar logout
     // Função para fazer logout diretamente
     const handleLogout = async () => {
@@ -60,7 +81,11 @@ const Profile = () => {
     return (
         <ScrollView style={styles.container}>
             <Text style={styles.headerTitle}>{getText('profile')}</Text>
-            
+
+            <Image source={currentImage} style={styles.profileIcon} />
+            <TouchableOpacity onPress={toggleImagePicker}>
+                <Text style={styles.editProfileBtn}>{getText('Edit Profile')}</Text>
+            </TouchableOpacity>
             {/* Categories Section */}
             <Text style={styles.sectionTitle}>{getText('category')}</Text>
             <Card style={styles.card}>
@@ -80,7 +105,7 @@ const Profile = () => {
             </Card>
 
             {/* Theme Toggle Section */}
-            <Text style={styles.sectionTitle}>{getText('appearance')}</Text>
+            <Text style={styles.sectionTitle}>{getText('Appearance')}</Text>
             <Card style={styles.card}>
                 <Card.Content>
                     <View style={styles.transactionRow}>
@@ -144,7 +169,7 @@ const Profile = () => {
             </Card>
 
             {/* About Section */}
-            <Text style={styles.sectionTitle}>{getText('about')}</Text>
+            <Text style={styles.sectionTitle}>{getText('About')}</Text>
             <Card style={styles.card}>
                 <Card.Content>
                     <View style={styles.transactionRow}>
@@ -152,15 +177,23 @@ const Profile = () => {
                             <View style={[styles.iconContainerWeak, { backgroundColor: '#FF9800' }]}>
                                 <Ionicons name="information-circle-outline" size={18} color="white" />
                             </View>
-                            <Text style={styles.transactionName}>{getText('version')}</Text>
+                            <Text style={styles.transactionName}>{getText('Version')}</Text>
                         </View>
                         <Text style={styles.versionText}>1.0.0</Text>
                     </View>
+                    <View style={styles.transactionRow}>
+                        <View style={styles.transactionInfo}>
+                            <View style={[styles.iconContainerWeak, { backgroundColor: '#FF9800' }]}>
+                                <Ionicons name="person-circle-outline" size={18} color="white" />
+                            </View>
+                            <Text style={styles.transactionName}>{getText('Account Status')}</Text>
+                        </View>
+                    </View>
                 </Card.Content>
             </Card>
-
+            
             {/* Logout Section */}
-            <Text style={styles.sectionTitle}>{getText('account')}</Text>
+            <Text style={styles.sectionTitle}>{getText('Account')}</Text>
             <Card style={styles.card}>
                 <TouchableOpacity onPress={handleLogout}>
                     <Card.Content>
@@ -169,12 +202,13 @@ const Profile = () => {
                                 <View style={[styles.iconContainerWeak, { backgroundColor: '#F44336' }]}>
                                     <Ionicons name="log-out-outline" size={18} color="white" />
                                 </View>
-                                <Text style={[styles.transactionName, { color: '#F44336' }]}>{getText('logout')}</Text>
+                                <Text style={[styles.transactionName, { color: '#F44336' }]}>{getText('Logout')}</Text>
                             </View>
                         </View>
                     </Card.Content>
                 </TouchableOpacity>
             </Card>
+            
 
             {/* Language Dropdown Modal */}
             <Modal

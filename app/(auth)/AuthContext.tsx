@@ -1,20 +1,22 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
-import { auth, db } from '@/utils/Firebase/firebase';
+import { auth, db, uploadProfileImage } from '@/utils/Firebase/firebase';
 import { 
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword, 
   signOut as firebaseSignOut,
   onAuthStateChanged
 } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
+
 
 // Definindo o tipo para o usuário
 type User = {
   id: string;
   email: string;
   name: string;
+  photoURL: string | null;
 } | null;
 
 // Definindo o tipo para o contexto de autenticação
@@ -53,10 +55,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               id: firebaseUser.uid,
               email: firebaseUser.email || '',
               name: userData.name || 'Usuário',
+              photoURL: userData.photoURL || null,
             };
             setUser(userInfo);
             setIsAuthenticated(true);
-            
+
             // Salvar dados do usuário no AsyncStorage para uso offline
             await AsyncStorage.setItem('user', JSON.stringify(userInfo));
           } else {
@@ -65,6 +68,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               id: firebaseUser.uid,
               email: firebaseUser.email || '',
               name: firebaseUser.displayName || 'Usuário',
+              photoURL: null,
             };
             setUser(userInfo);
             setIsAuthenticated(true);
@@ -138,6 +142,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           id: firebaseUser.uid,
           email: firebaseUser.email || email,
           name: userData.name || 'Usuário',
+          photoURL: userData.photoURL || null,
         };
         setUser(userInfo);
         setIsAuthenticated(true);
@@ -150,6 +155,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           id: firebaseUser.uid,
           email: firebaseUser.email || email,
           name: firebaseUser.displayName || 'Usuário',
+          photoURL: null,
         };
         setUser(userInfo);
         setIsAuthenticated(true);
@@ -188,6 +194,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         name,
         email,
         createdAt: new Date(),
+        photoURL: null, // <-- Adicione esta linha!
       });
       
       // Definir o usuário no estado
@@ -195,6 +202,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         id: firebaseUser.uid,
         email,
         name,
+        photoURL: null,
       });
       
       // Navegar para a tela principal
@@ -254,5 +262,10 @@ export const useAuth = () => {
   }
   return context;
 };
+
+const handleProfileImageUpdate = async (uri: string, userId: string) => {
+  const url = await uploadProfileImage(uri, userId);
+  await updateDoc(doc(db, "users", userId), { photoURL: url });
+}
 
 export default AuthContext;

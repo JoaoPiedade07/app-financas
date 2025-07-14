@@ -8,20 +8,20 @@ import { ImageProvider } from './Image/ImageContent';
 export default function RootLayout() {
   return (
     <ThemeProvider>
-      <LanguageProvider>
-        <AuthProvider>
-          <TransactionProvider>
-            <ImageProvider>
+      <ImageProvider>
+        <LanguageProvider>
+          <AuthProvider>
+            <TransactionProvider>
               <Stack>
                 <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
                 <Stack.Screen name="(signup)" options={{ headerShown: false }} />
                 <Stack.Screen name="(profile)" options={{ headerShown: false }} />
                 <Stack.Screen name="index" options={{ headerShown: false }} />
               </Stack>
-            </ImageProvider>
-          </TransactionProvider>
-        </AuthProvider>
-      </LanguageProvider>
+            </TransactionProvider>
+          </AuthProvider>
+        </LanguageProvider>
+      </ImageProvider>
     </ThemeProvider>
   );
 }

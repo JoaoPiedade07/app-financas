@@ -126,6 +126,13 @@ export const profileStyles = StyleSheet.create ({
         fontSize: 16,
         fontWeight: 'bold',
     },
+    userName: {
+        fontSize: 16,
+        //fontWeight: 'bold',
+        textAlign: 'center',
+        marginTop: 10,
+        marginBottom: 10,
+    },
 })
 
 export default profileStyles;

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Text, View, TouchableOpacity, Modal, Pressable, Animated, ScrollView, Alert, Image, Button } from 'react-native';
 import { Card } from "react-native-paper";
 import { Ionicons } from '@expo/vector-icons';
@@ -7,6 +7,8 @@ import { useLanguage } from '../Languages/LanguageContente';
 import { useTheme } from '@/components/ThemeContext';
 import { profileStyles as styles} from '@/app/styles/profile.styles';
 import { useAuth } from '@/app/(auth)/AuthContext';
+import { db, uploadProfileImage, auth } from '@/utils/Firebase/firebase';
+import { setDoc, doc, getDoc } from 'firebase/firestore';
 import { useRouter } from 'expo-router';
 import { useImage } from '@/app/Image/ImageContent';
 import { ImageSourcePropType } from 'react-native';
@@ -18,7 +20,7 @@ const Profile = () => {
     const {currentLanguage, setCurrentLanguage, getText} = useLanguage();
     const { currentImage, setCurrentImage } = useImage();
     const { theme, toggleTheme } = useTheme();
-    const { signOut } = useAuth();
+    const { signOut, user } = useAuth();
     const switchAnim = useRef(new Animated.Value(theme === 'dark' ? 1 : 0)).current;
 
     function handleToggleTheme() {
@@ -51,20 +53,32 @@ const Profile = () => {
         setShowLanguageDropdown(false);
     };
 
-    const toggleImagePicker = () => {
-        ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ['images'],
+    useEffect(() => {
+        if (user?.photoURL) {
+          setCurrentImage({ uri: user.photoURL + '?t=' + new Date().getTime() });
+        } else {
+            setCurrentImage(require('@/assets/images/react-logo.png'));
+        }
+      }, [user?.photoURL]);
+
+    const handleImagePick = async () => {
+        let result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: 'images',
             allowsEditing: true,
             aspect: [1, 1],
             quality: 1,
-        }).then(result => {
-            if (!result.canceled) {
-                changeImage(result.assets[0]);
-            }
         });
-    }
-    const changeImage = (image: ImageSourcePropType) => {
-        setCurrentImage(image);
+        if (!result.canceled && user?.id) {
+            const url = await uploadProfileImage(result.assets[0].uri, user.id);
+            await setDoc(doc(db, "users", user.id), { photoURL: url }, { merge: true });
+
+            // Recarrega o documento do usuário
+            const userDoc = await getDoc(doc(db, "users", user.id));
+            if (userDoc.exists()) {
+                const userData = userDoc.data();
+                setCurrentImage({ uri: userData.photoURL + '?t=' + new Date().getTime() });
+            }
+        }
     };
 
     // Função para confirmar logout
@@ -81,9 +95,9 @@ const Profile = () => {
     return (
         <ScrollView style={styles.container}>
             <Text style={styles.headerTitle}>{getText('profile')}</Text>
-
             <Image source={currentImage} style={styles.profileIcon} />
-            <TouchableOpacity onPress={toggleImagePicker}>
+            <Text style={styles.userName}> {user?.name || 'User'}</Text>
+            <TouchableOpacity onPress={handleImagePick}>
                 <Text style={styles.editProfileBtn}>{getText('Edit Profile')}</Text>
             </TouchableOpacity>
             {/* Categories Section */}

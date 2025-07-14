@@ -2,6 +2,7 @@ import { initializeApp } from 'firebase/app';
 //import { getAnalytics } from "firebase/analytics";
 import { initializeFirestore, persistentLocalCache, persistentSingleTabManager }  from 'firebase/firestore';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 // Configuração do Firebase
 const firebaseConfig = {
@@ -9,7 +10,7 @@ const firebaseConfig = {
   authDomain: "finances-tracker-56fe1.firebaseapp.com",
   databaseURL: "https://finances-tracker-56fe1-default-rtdb.europe-west1.firebasedatabase.app",
   projectId: "finances-tracker-56fe1",
-  storageBucket: "finances-tracker-56fe1.firebasestorage.app",
+  storageBucket: "finances-tracker-56fe1.firebasestorage.appspot.com",
   messagingSenderId: "395103140215",
   appId: "1:395103140215:web:028b68c2a52a0f9ca9c972",
   measurementId: "G-MCQ3WTD0V6"
@@ -39,6 +40,15 @@ const getCurrentUser = () => {
       reject
     );
   });
+};
+
+export const uploadProfileImage = async (uri: string, userId: string) => {
+  const response = await fetch(uri);
+  const blob = await response.blob();
+  const storage = getStorage(app);
+  const storageRef = ref(storage, `users/${userId}/profile.png`);
+  await uploadBytes(storageRef, blob);
+  return await getDownloadURL(storageRef);
 };
 
 export { app, db, auth, getCurrentUser };

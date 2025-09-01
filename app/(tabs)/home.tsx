@@ -1,6 +1,5 @@
 import React, { useContext, useState } from 'react';
 import { StyleSheet, Text, View, Dimensions, TouchableOpacity, ScrollView, Image, FlatList, RefreshControl, ActivityIndicator } from 'react-native';
-import { VictoryPie } from "victory";
 import { Card } from "react-native-paper";
 import { Ionicons } from '@expo/vector-icons';
 import { transformSync } from '@babel/core';
@@ -181,19 +180,30 @@ const Home = () => {
                             <Card.Content>
                                 <View style={styles.container}>
                                     <View style={styles.chartContainer}>
-                                        <VictoryPie
-                                            data={chartData}
-                                            x="label"
-                                            y="value"
-                                            innerRadius={65}
-                                            padAngle={2}
-                                            labels={() => null}
-                                            style={{ labels: { display: "none" } }}
-                                            colorScale={chartData.map(item => item.color)}
-                                            width={screenWidth * 0.65}
-                                            height={260}
-                                            padding={{ left: 0, right: 50 }}
-                                        />
+                                        <View style={styles.pieChartContainer}>
+                                            <View style={styles.pieChart}>
+                                                {chartData.map((item, index) => {
+                                                    const total = chartData.reduce((sum, d) => sum + d.value, 0);
+                                                    const percentage = total > 0 ? (item.value / total) * 100 : 0;
+                                                    const angle = (percentage / 100) * 360;
+                                                    
+                                                    return (
+                                                        <View
+                                                            key={index}
+                                                            style={[
+                                                                styles.pieSlice,
+                                                                {
+                                                                    backgroundColor: item.color,
+                                                                    transform: [
+                                                                        { rotate: `${index * (360 / chartData.length)}deg` }
+                                                                    ]
+                                                                }
+                                                            ]}
+                                                        />
+                                                    );
+                                                })}
+                                            </View>
+                                        </View>
                                     </View>
                                     <View style={styles.legend}>
                                         {chartData.map((item, index) => (

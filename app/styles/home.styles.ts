@@ -32,6 +32,24 @@ export const homeStyles = StyleSheet.create({
         alignItems: "center",
         marginLeft: 0,
     },
+    pieChartContainer: {
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    pieChart: {
+        width: 120,
+        height: 120,
+        borderRadius: 60,
+        overflow: 'hidden',
+        position: 'relative',
+    },
+    pieSlice: {
+        position: 'absolute',
+        width: '100%',
+        height: '100%',
+        borderRadius: 60,
+        transform: [{ rotate: '0deg' }],
+    },
     legend: {
         width: "60%",
         paddingLeft: 5,

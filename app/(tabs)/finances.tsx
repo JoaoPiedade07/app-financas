@@ -2,8 +2,7 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { Text, View, TouchableOpacity, ScrollView, Modal, TextInput, Dimensions, FlatList, RefreshControl, ActivityIndicator, Platform } from 'react-native';
 import { Calendar, DateData } from 'react-native-calendars';
-import { BarChart } from '@mui/x-charts/BarChart';
-import { GestureDetector, Gesture } from 'react-native-gesture-handler';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { 
     useAnimatedStyle, 
     useSharedValue, 
@@ -111,6 +110,9 @@ const Finances = () => {
             });
     }, [handleSwipeStart]);
 
+
+
+
     const deleteButtonStyle = useAnimatedStyle(() => {
         return {
             width: deleteWidth.value,
@@ -184,17 +186,15 @@ const Finances = () => {
             setModalVisible(false);
         };
     
-    const gesture = Gesture.Pan()
-        .onBegin(() => {
+    const gesture = (event: any) => {
+        if (event.nativeEvent.state === 2) { // BEGIN
             translateY.value = 0;
-        })
-        .onUpdate((event) => {
-            if (event.translationY > 0) { // Só permite arrastar para baixo
-                translateY.value = event.translationY;
+        } else if (event.nativeEvent.state === 4) { // ACTIVE
+            if (event.nativeEvent.translationY > 0) { // Só permite arrastar para baixo
+                translateY.value = event.nativeEvent.translationY;
             }
-        })
-        .onEnd((event) => {
-            if (event.translationY > 100) { // Se arrastar mais de 100 pixels, fecha o modal
+        } else if (event.nativeEvent.state === 5) { // END
+            if (event.nativeEvent.translationY > 100) { // Se arrastar mais de 100 pixels, fecha o modal
                 translateY.value = withTiming(screenHeight, { duration: 300 });
                 isModalOpen.value = false;
                 runOnJS(() => {
@@ -205,7 +205,8 @@ const Finances = () => {
                 // Se não arrastar o suficiente, volta ao topo
                 translateY.value = withTiming(0, { duration: 300 });
             }
-        });
+        }
+    };
     
     const animatedStyle = useAnimatedStyle(() => {
         return {
@@ -253,9 +254,50 @@ const Finances = () => {
             );
         }
         
+        const panGesture = Gesture.Pan()
+            .onBegin(() => {
+                // Safety check - only allow gesture if modal is actually visible
+                if (!modalVisible && !modalVisibleDelete) return;
+                translateY.value = 0;
+            })
+            .onUpdate((event) => {
+                // Safety check - only allow gesture if modal is actually visible
+                if (!modalVisible && !modalVisibleDelete) return;
+                
+                // Only allow downward swipes and limit the maximum distance
+                if (event.translationY > 0 && event.translationY < 200) {
+                    translateY.value = event.translationY;
+                }
+            })
+            .onEnd((event) => {
+                // Safety check - only allow gesture if modal is actually visible
+                if (!modalVisible && !modalVisibleDelete) return;
+                
+                if (event.translationY > 100) { // Se arrastar mais de 100 pixels, fecha o modal
+                    translateY.value = withTiming(screenHeight, { duration: 300 });
+                    isModalOpen.value = false;
+                    runOnJS(() => {
+                        if (modalVisible) setModalVisible(false);
+                        if (modalVisibleDelete) setModalVisibleDelete(false);
+                    })();
+                } else {
+                    // Se não arrastar o suficiente, volta ao topo
+                    translateY.value = withTiming(0, { duration: 300 });
+                }
+            })
+            .shouldCancelWhenOutside(true) // Cancel gesture if finger goes outside
+            .activeOffsetY([0, 10]) // Only activate after 10px vertical movement
+            .simultaneousWithExternalGesture(Gesture.Native()); // Allow other gestures to work
+
         return (
-            <GestureDetector gesture={gesture}>
-                <Animated.View style={[styles.modalContent, animatedStyle]}>
+            <GestureDetector gesture={panGesture}>
+                <Animated.View 
+                    style={[styles.modalContent, animatedStyle]}
+                    onLayout={() => {
+                        // Reset position when modal layout changes
+                        translateY.value = 0;
+                    }}
+                >
                     <View style={styles.dragIndicator} />
                     {content}
                 </Animated.View>
@@ -275,12 +317,6 @@ const Finances = () => {
                     />
                 }
             >
-            <BarChart
-                xAxis={[{ scaleType: 'band', data: [ 'Receits', 'Expenses' ] }]}
-                series={[{ data: [1, 7] }, { data: [6, 2] }]}
-                width={400}
-                height={250}
-                />
             <Text style={styles.title}>{getText ('upcomingBills')}</Text>
             <FlatList
                 data={transactions.filter(t => t.isUpcomingBill)}
@@ -352,7 +388,6 @@ const Finances = () => {
                             {transactions.map((transaction) => (
                             <View key={transaction.id} style={styles.swipeContainer}>
                                 <Animated.View style={[styles.swipeContainerBackground, swipeContainerStyle]} />
-                                <GestureDetector gesture={createSwipeGesture(transaction.id.toString())}>
                                     <Animated.View 
                                         style={[
                                             styles.transactionRow, 
@@ -374,7 +409,6 @@ const Finances = () => {
                                         {transaction.value >= 0 ? `+${transaction.value.toFixed(2)}` : `${transaction.value.toFixed(2)}`}
                                     </Text>
                                     </Animated.View>
-                                </GestureDetector>
                                 {swipedTransactionId === transaction.id && (
                                 <Animated.View style={[styles.deleteButton, deleteButtonStyle]}>
                                     <TouchableOpacity 

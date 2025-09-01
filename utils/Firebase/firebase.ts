@@ -1,7 +1,8 @@
 import { initializeApp } from 'firebase/app';
 //import { getAnalytics } from "firebase/analytics";
 import { initializeFirestore, persistentLocalCache, persistentSingleTabManager }  from 'firebase/firestore';
-import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { getAuth, onAuthStateChanged, initializeAuth, getReactNativePersistence } from 'firebase/auth';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 // Configuração do Firebase
@@ -26,7 +27,9 @@ const db = initializeFirestore(app, {
   })
 });
 
-const auth = getAuth(app);
+const auth = initializeAuth(app, {
+  persistence: getReactNativePersistence(AsyncStorage)
+});
 
 // Função auxiliar para verificar o estado de autenticação atual
 const getCurrentUser = () => {
